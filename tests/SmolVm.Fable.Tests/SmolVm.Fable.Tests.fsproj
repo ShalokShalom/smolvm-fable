@@ -6,27 +6,15 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <!--
-    Fable compile-time constant: when transpiling to JS, Fable defines
-    FABLE_COMPILER_JAVASCRIPT, which the Scriptorium sources use to
-    switch between Node fs and System.IO.
-  -->
-
   <ItemGroup>
     <Compile Include="Helpers.fs" />
     <Compile Include="MachineConfigTests.fs" />
-    <Compile Include="ExecResultTests.fs" />
-    <Compile Include="ContainerConfigTests.fs" />
-    <Compile Include="ResourceLimitsTests.fs" />
+    <Compile Include="ExecResponseTests.fs" />
+    <Compile Include="ContainerOptionsTests.fs" />
+    <Compile Include="ResourceSpecTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
 
-  <!--
-    NuGet references — pinned to the same versions used by Scriptorium itself.
-    On .NET the project references Scriptorium packages directly from NuGet.
-    When building for Fable/JS, add <PackageReference Include="Fable.Core" />
-    and run `dotnet fable` instead of `dotnet run`.
-  -->
   <ItemGroup>
     <PackageReference Include="Scriptorium.Nib" Version="0.*" />
     <PackageReference Include="Scriptorium.Nib.Snapshot" Version="0.*" />
@@ -34,7 +22,6 @@
     <PackageReference Include="Fable.Core" Version="4.5.0" />
   </ItemGroup>
 
-  <!-- Binding library: project reference so changes are picked up immediately -->
   <ItemGroup>
     <ProjectReference Include="..\..\SmolVm.Fable.fsproj" />
   </ItemGroup>

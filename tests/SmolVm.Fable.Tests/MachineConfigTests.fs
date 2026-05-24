@@ -1,18 +1,25 @@
 module SmolVm.Fable.Tests.MachineConfigTests
 
 open SmolVm.Fable.Tests.Helpers
-open SmolVm.Fable                // binding types
+open SmolVm.Types      // MachineConfig, ResourceSpec, MountSpec, PortSpec
 open Scriptorium.Quill
 open type Scriptorium.Quill.Test
 
-// ──────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
 // MachineConfig snapshot tests
 //
-// These tests verify that the default values of MachineConfig, and a selection
-// of non-default variants, remain stable across refactors and Fable compilation
-// targets.  Every test calls t.snapshot so the snapshot key is derived from the
-// full test path (e.g. "MachineConfig > default config snapshot").
-// ──────────────────────────────────────────────────────────────────────────────
+// MachineConfig is a [<Pojo>] record.  All fields use camelCase to mirror the
+// JS object shape.  There is no static Default — we construct literal values.
+// ---------------------------------------------------------------------------
+
+/// Minimal valid MachineConfig: only the required `name` field is supplied;
+/// all option fields are None, matching the zero-config JS example.
+let private minimalConfig : MachineConfig =
+    { name      = "my-machine"
+      serverUrl = None
+      mounts    = None
+      ports     = None
+      resources = None }
 
 let tests =
     testSequenced (
@@ -20,61 +27,66 @@ let tests =
         [
 
             test (
-                "default config snapshot",
+                "minimal config snapshot",
                 fun (t: TestContext) ->
-                    // MachineConfig.Default is the zero-configuration starting point.
-                    // Snapshotting it catches any accidental change to a default field.
-                    let cfg = MachineConfig.Default
+                    snap t minimalConfig
+            )
+
+            test (
+                "config with custom serverUrl",
+                fun (t: TestContext) ->
+                    let cfg = { minimalConfig with serverUrl = Some "http://192.168.1.100:8080" }
                     snap t cfg
             )
 
             test (
-                "config with custom name",
-                fun (t: TestContext) ->
-                    let cfg = { MachineConfig.Default with Name = "my-machine" }
-                    snap t cfg
-            )
-
-            test (
-                "config with memory limit",
+                "config with resource limits",
                 fun (t: TestContext) ->
                     let cfg =
-                        { MachineConfig.Default with
-                            Name = "heavy"
-                            Memory = Some 512 }
+                        { minimalConfig with
+                            name      = "constrained"
+                            resources = Some { vcpus = Some 2; memory = Some 512 } }
                     snap t cfg
             )
 
             test (
-                "config with CPU and memory limits",
+                "config with memory-only resources",
                 fun (t: TestContext) ->
                     let cfg =
-                        { MachineConfig.Default with
-                            Name = "constrained"
-                            Vcpus = Some 2
-                            Memory = Some 256 }
+                        { minimalConfig with
+                            name      = "memory-only"
+                            resources = Some { vcpus = None; memory = Some 256 } }
                     snap t cfg
             )
 
             test (
-                "config with kernel path override",
+                "config with mounts",
                 fun (t: TestContext) ->
-                    let cfg =
-                        { MachineConfig.Default with
-                            Name = "custom-kernel"
-                            KernelPath = Some "/boot/vmlinux" }
+                    let mount : MountSpec =
+                        { hostPath = "/data"
+                          tag      = "data"
+                          readOnly = Some true }
+                    let cfg = { minimalConfig with mounts = Some [| mount |] }
                     snap t cfg
             )
 
             test (
-                "round-trip: serialise then snapshot",
+                "config with port mappings",
                 fun (t: TestContext) ->
-                    // Verify the serialised JSON representation so we can detect if
-                    // the Fable JS output and the .NET output diverge in field naming.
+                    let port : PortSpec = { host = 8080; guest = 80 }
+                    let cfg = { minimalConfig with ports = Some [| port |] }
+                    snap t cfg
+            )
+
+            test (
+                "round-trip sprintf representation snapshot",
+                fun (t: TestContext) ->
+                    // Uses sprintf "%A" so .NET and Fable-JS representations can
+                    // be compared independently of JSON serialisation.
                     let cfg =
-                        { MachineConfig.Default with
-                            Name = "round-trip"
-                            Memory = Some 128 }
+                        { minimalConfig with
+                            name      = "round-trip"
+                            resources = Some { vcpus = Some 1; memory = Some 128 } }
                     snapWith t (sprintf "%A") cfg
             )
 
