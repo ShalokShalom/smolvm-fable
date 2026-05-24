@@ -1,7 +1,7 @@
 # smolvm-fable
 
 Idiomatic **F# / [Fable 5](https://fable.io)** bindings for
-[smolvm(https://github.com/smol-machines/smolvm-sdk/).
+[smolvm](https://github.com/smol-machines/smolvm-sdk/).
 
 This library is a **Fable-compatible wrapper** around the upstream `smolvm`
 npm package. It exposes the core `smolvm-node` API as typed F# with
