@@ -8,6 +8,9 @@ let main _ =
         [
             MachineConfigTests.tests
             ExecResponseTests.tests
+            ExecResultTests.tests
+            ContainerConfigTests.tests
             ContainerOptionsTests.tests
             ResourceSpecTests.tests
+            ResourceLimitsTests.tests
         ]

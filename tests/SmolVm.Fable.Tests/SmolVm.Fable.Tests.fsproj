@@ -10,8 +10,11 @@
     <Compile Include="Helpers.fs" />
     <Compile Include="MachineConfigTests.fs" />
     <Compile Include="ExecResponseTests.fs" />
+    <Compile Include="ExecResultTests.fs" />
+    <Compile Include="ContainerConfigTests.fs" />
     <Compile Include="ContainerOptionsTests.fs" />
     <Compile Include="ResourceSpecTests.fs" />
+    <Compile Include="ResourceLimitsTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
 

@@ -7,12 +7,6 @@ open Fable.Core
 // (kept as plain F# records / discriminated unions for ergonomics)
 // ============================================================================
 
-/// A single environment variable name/value pair.
-[<Pojo>]
-type EnvVar =
-    { name  : string
-      value : string }
-
 /// A host→guest port mapping.
 [<Pojo>]
 type PortSpec =
@@ -96,7 +90,7 @@ type LogsOptions =
 /// Mirrors ContainerMountSpec in the generated OpenAPI models.
 [<Pojo>]
 type ContainerMount =
-    { /// virtiofs tag from the parent machine’s MountSpec
+    { /// virtiofs tag from the parent machine's MountSpec
       source   : string
       /// Target path inside the container
       target   : string

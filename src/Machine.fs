@@ -7,7 +7,7 @@ open SmolVm.Execution
 open SmolVm.Container
 
 // ============================================================================
-// Raw JS imports  —  map directly onto machine.ts exports
+// Raw JS import  —  maps directly onto the Machine class in machine.ts
 // ============================================================================
 
 /// Low-level Fable binding to the JS Machine class from machine.ts.
@@ -26,42 +26,51 @@ type JsMachine =
     abstract exec      : command: string array * ?options: obj -> Promise<obj>
     abstract run       : image: string * command: string array * ?options: obj -> Promise<obj>
     abstract logs      : ?options: obj -> obj   // AsyncIterable<string> in JS
-    abstract createContainer  : options: obj         -> Promise<obj>
-    abstract listContainers   : unit               -> Promise<obj[]>
-    abstract getContainer     : id: string          -> Promise<obj>
-    abstract listImages       : unit               -> Promise<ImageInfo[]>
+    abstract createContainer  : options: obj   -> Promise<obj>
+    abstract listContainers   : unit           -> Promise<obj[]>
+    abstract getContainer     : id: string     -> Promise<obj>
+    abstract listImages       : unit           -> Promise<ImageInfo[]>
     abstract pullImage        : image: string * ?ociPlatform: string -> Promise<ImageInfo>
 
-/// Raw JS helper functions exported from machine.ts
-[<Import("withMachine", "smolvm")>]
-let jsWithMachine : obj -> (JsMachine -> Promise<obj>) -> Promise<obj> = jsNative
-
-[<Import("quickExec", "smolvm")>]
-let jsQuickExec : string array -> obj option -> Promise<obj> = jsNative
-
-[<Import("quickRun", "smolvm")>]
-let jsQuickRun : string -> string array -> obj option -> Promise<obj> = jsNative
-
 // ============================================================================
-// Helpers to build JS option objects
+// Helpers to build plain JS objects
+//
+// IMPORTANT: F# option values must be unwrapped before crossing the JS
+// boundary.  Inside anonymous records Fable emits them as discriminated-union
+// objects ({ tag: "Some", fields: [x] }) which the JS SDK does not understand.
+// Option.toObj  → null for None, the value for Some (reference types)
+// Option.toNullable → Nullable for None (for value types such as int)
 // ============================================================================
 
-let private toEnvVars (env: Map<string,string> option) =
-    env
-    |> Option.map (fun m ->
-        m |> Map.toArray |> Array.map (fun (k,v) -> {| name = k; value = v |}))
+/// Convert a string→string map to the JS env-var array shape.
+let private toEnvVars (env: Map<string,string> option) : obj =
+    match env with
+    | None   -> null
+    | Some m ->
+        m
+        |> Map.toArray
+        |> Array.map (fun (k,v) -> {| name = k; value = v |})
+        |> box
 
+/// Serialise ExecOptions to a plain JS object.
 let private execOptsToJs (o: ExecOptions) : obj =
     upcast {| env         = toEnvVars o.env
-              workdir     = o.workdir
-              timeoutSecs = o.timeout |}
+              workdir     = Option.toObj o.workdir
+              timeoutSecs = Option.toNullable o.timeout |}
 
+/// Serialise LogsOptions to a plain JS object.
+let private logsOptsToJs (o: LogsOptions) : obj =
+    upcast {| follow = Option.toNullable o.follow
+              since  = Option.toObj o.since
+              tail   = Option.toNullable o.tail |}
+
+/// Serialise MachineConfig to a plain JS object.
 let private machineConfigToJs (cfg: MachineConfig) : obj =
     upcast {| name      = cfg.name
-              serverUrl = cfg.serverUrl
-              mounts    = cfg.mounts
-              ports     = cfg.ports
-              resources = cfg.resources |}
+              serverUrl = Option.toObj cfg.serverUrl
+              mounts    = Option.toObj cfg.mounts
+              ports     = Option.toObj cfg.ports
+              resources = Option.toObj cfg.resources |}
 
 // ============================================================================
 // Ergonomic F# wrapper around Machine
@@ -79,16 +88,11 @@ type Machine(js: JsMachine) =
     /// Create a new machine and start it.
     /// Mirrors Machine.create(config) in machine.ts.
     ///
-    /// Implementation note: `[<Emit>]` replaces the call-site expression in the
-    /// Fable JS output with a literal `Machine.create(...)` call, returning a
-    /// `Promise<JsMachine>`.  We then map over that promise to wrap the result
-    /// in the F# `Machine` class.  A `promise { }` body cannot be used here
-    /// because `[<Emit>]` replaces the *entire* call expression — any code in
-    /// the body would be silently discarded by the Fable compiler.
+    /// Implementation note: emitJsExpr inlines `Machine.create(cfg)` at the
+    /// call site so Fable resolves the JS class reference correctly.  We then
+    /// map over the returned Promise<JsMachine> to wrap it in the F# Machine.
     static member Create(config: MachineConfig) : Promise<Machine> =
         let cfg = machineConfigToJs config
-        // emitJsExpr produces:  Machine.create(cfg)
-        // The result is Promise<JsMachine> on the JS side.
         let p : Promise<JsMachine> = emitJsExpr cfg "Machine.create($0)"
         p |> Promise.map Machine
 
@@ -187,15 +191,9 @@ type Machine(js: JsMachine) =
     /// `tail` limits the number of lines returned.
     /// Mirrors Machine.logs(options?) in machine.ts.
     member _.Logs(?options: LogsOptions) : JS.AsyncIterableIterator<string> =
-        let optsObj =
-            options
-            |> Option.map (fun o ->
-                {| follow = o.follow
-                   since  = o.since
-                   tail   = o.tail |})
-        match optsObj with
+        match options with
         | None   -> unbox (js.logs())
-        | Some o -> unbox (js.logs(upcast o))
+        | Some o -> unbox (js.logs(logsOptsToJs o))
 
     // -----------------------------------------------------------------------
     // Containers
@@ -205,14 +203,13 @@ type Machine(js: JsMachine) =
     /// Mirrors Machine.createContainer(options) in machine.ts.
     member _.CreateContainer(options: ContainerOptions) : Promise<Container> =
         promise {
-            let env = toEnvVars options.env
             let optsObj =
-                {| image   = options.image
-                   command = options.command
-                   env     = env
-                   workdir = options.workdir
-                   mounts  = options.mounts |}
-            let! raw = js.createContainer(upcast optsObj)
+                upcast {| image   = options.image
+                          command = Option.toObj options.command
+                          env     = toEnvVars options.env
+                          workdir = Option.toObj options.workdir
+                          mounts  = Option.toObj options.mounts |}
+            let! raw = js.createContainer(optsObj)
             return Container(unbox<JsContainer> raw)
         }
 
@@ -259,17 +256,14 @@ type Machine(js: JsMachine) =
 /// This is the recommended pattern for short-lived tasks.
 /// Mirrors withMachine(config, fn) in machine.ts.
 ///
-/// Cleanup note: stop and delete are awaited sequentially via promise chaining
-/// so the daemon always receives them in order.  Errors in `fn` are re-raised
-/// after cleanup completes.
+/// Cleanup note: stop and delete are awaited sequentially so the daemon always
+/// receives them in order.  Errors in `fn` are re-raised after cleanup.
 let withMachine (config: MachineConfig) (fn: Machine -> Promise<'T>) : Promise<'T> =
     promise {
         let! m = Machine.Create(config)
-        // Run the user function, capturing success or failure.
         let! outcome =
             fn m
             |> Promise.catch (fun e -> promise { return raise e })
-        // Always stop then delete, awaiting each step.
         do! m.Stop()
         do! m.Delete()
         return outcome
