@@ -17,7 +17,6 @@
     <Compile Include="src/Execution.fs" />
     <Compile Include="src/Container.fs" />
     <Compile Include="src/Machine.fs" />
-    <Compile Include="src/Presets/Python.fs" />
     <Compile Include="src/Presets/Node.fs" />
   </ItemGroup>
 
