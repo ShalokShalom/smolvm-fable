@@ -5,10 +5,22 @@ Idiomatic **F# / [Fable](https://fable.io)** bindings for the
 
 This library is a **Fable-compatible wrapper** around the upstream `smolvm`
 npm package. It exposes every public API from `smolvm-node` as typed F# with
-idiomatic naming conventions.
+idiomatic naming conventions and no unsafe JS-object leakage.
 
 > Upstream source inspected at commit `d9872f1` of
 > [smol-machines/smolvm-sdk](https://github.com/smol-machines/smolvm-sdk).
+
+---
+
+## Status
+
+| Area | State |
+|---|---|
+| Core binding (`Types`, `Execution`, `Container`, `Machine`) | ✅ Stable |
+| Language presets (`PythonMachine`, `NodeMachine`) | ✅ Stable |
+| Error hierarchy (`SmolvmError` … `ExecutionError`) | ✅ Stable |
+| Tests (Scriptorium.Quill snapshot suite) | ✅ Compiles & passes |
+| NuGet package | 🚧 Not yet published |
 
 ---
 
@@ -43,7 +55,13 @@ open SmolVm.Types
 
 let run () = promise {
     // Create a machine (maps to Machine.create({ name: '...' }) in JS)
-    let! machine = Machine.Create { name = "hello"; serverUrl = None; mounts = None; ports = None; resources = None }
+    let! machine =
+        Machine.Create
+            { name      = "hello"
+              serverUrl = None
+              mounts    = None
+              ports     = None
+              resources = None }
 
     // Run a bare command in the VM
     let! result = machine.Exec([| "echo"; "Hello from F#!" |])
@@ -64,13 +82,48 @@ let run () = promise {
 open SmolVm.Machine
 open SmolVm.Types
 
-let cfg = { name = "worker"; serverUrl = None; mounts = None; ports = None; resources = None }
+let cfg =
+    { name      = "worker"
+      serverUrl = None
+      mounts    = None
+      ports     = None
+      resources = None }
 
 withMachine cfg (fun m -> promise {
     let! r = m.Exec([| "date" |])
     printfn "%s" r.Stdout
 })
 |> Promise.start
+```
+
+### Python preset
+
+```fsharp
+open SmolVm.Presets.Python
+open SmolVm.Types
+
+let runPython () = promise {
+    let! py = PythonMachine.Create { name = "py-runner"; serverUrl = None; mounts = None; ports = None; resources = None }
+    let! r  = py.RunCode("print('hello from Python!')")
+    printfn "%s" r.Stdout
+    do! py.Stop()
+    do! py.Delete()
+}
+```
+
+### Node.js preset
+
+```fsharp
+open SmolVm.Presets.Node
+open SmolVm.Types
+
+let runNode () = promise {
+    let! nd = NodeMachine.Create { name = "node-runner"; serverUrl = None; mounts = None; ports = None; resources = None }
+    let! r  = nd.RunCode("console.log('hello from Node!')")
+    printfn "%s" r.Stdout
+    do! nd.Stop()
+    do! nd.Delete()
+}
 ```
 
 ---
@@ -86,6 +139,13 @@ withMachine cfg (fun m -> promise {
 | `mounts` | `MountSpec[] option` | — | Host mounts (virtiofs) |
 | `ports` | `PortSpec[] option` | — | Host→guest port mappings |
 | `resources` | `ResourceSpec option` | — | CPU / memory limits |
+
+### `ResourceSpec`
+
+| Field | Type | Description |
+|---|---|---|
+| `vcpus` | `int option` | Number of virtual CPUs |
+| `memory` | `int option` | Memory in MiB |
 
 ### `Machine`
 
@@ -143,6 +203,14 @@ withMachine cfg (fun m -> promise {
 | `machine.PullImage` | `string → ?string → Promise<ImageInfo>` | `machine.pullImage(img, plat?)` | Pull an OCI image |
 
 ---
+
+### `ExecOptions`
+
+| Field | Type | Description |
+|---|---|---|
+| `env` | `Map<string,string> option` | Environment variables |
+| `workdir` | `string option` | Working directory |
+| `timeout` | `int option` | Timeout in seconds |
 
 ### `ExecResult`
 
@@ -231,6 +299,65 @@ Extends `Machine` with Node.js conveniences.
 | `withMachine cfg fn` | `MachineConfig → (Machine → Promise<'T>) → Promise<'T>` | `withMachine(cfg, fn)` | RAII-style machine scope |
 | `quickExec cmd ?cfg` | `string[] → ?MachineConfig → Promise<ExecResult>` | `quickExec(cmd, opts?)` | One-shot bare command |
 | `quickRun img cmd ?cfg` | `string → string[] → ?MachineConfig → Promise<ExecResult>` | `quickRun(img, cmd, opts?)` | One-shot OCI command |
+
+---
+
+## Implementation notes
+
+### F# `option` and the JS boundary
+
+F# `option` values are discriminated unions.  If passed directly into JS
+object literals they arrive as `{ tag: "Some", fields: [x] }` — which the
+smolvm daemon will not understand.  Every helper that builds a plain JS object
+for the SDK call uses `Option.toObj` (reference types → `null`) or
+`Option.toNullable` (value types such as `int` → `Nullable`) to strip the DU
+wrapper before crossing the boundary.
+
+### `Machine.Create` vs. `new Machine()`
+
+The upstream JS SDK exposes only a static `Machine.create(config)` factory —
+there is no public constructor.  The Fable binding mirrors this with a static
+`Machine.Create(config)` member that uses `emitJsExpr` to call the JS static
+method and then wraps the resulting `JsMachine` in the F# `Machine` type.
+
+### Async model
+
+All async operations return `Fable.Core.JS.Promise<'T>`.  Use the `promise {
+… }` computation expression (from `Fable.Core.JS`) to sequence them
+idiomatically.
+
+---
+
+## Running the tests
+
+```bash
+cd tests/SmolVm.Fable.Tests
+dotnet run
+```
+
+Tests use [Scriptorium.Quill](https://github.com/ShalokShalom/Scriptorium) for
+snapshot and assertion testing.  Snapshots live in
+`tests/SmolVm.Fable.Tests/__snapshots__/` and are committed to source control.
+
+---
+
+## Project layout
+
+```
+SmolVm.Fable.fsproj          # Library project
+src/
+  Types.fs                   # All record / DU types (no JS interop)
+  Errors.fs                  # F# exception hierarchy mirroring JS errors
+  Execution.fs               # ExecResult wrapper
+  Container.fs               # Container class
+  Machine.fs                 # Machine class + withMachine / quickExec / quickRun
+  Presets/
+    Python.fs                # PythonMachine
+    Node.fs                  # NodeMachine
+tests/
+  SmolVm.Fable.Tests/
+    *.fs                     # Snapshot & assertion tests
+```
 
 ---
 
