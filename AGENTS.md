@@ -23,18 +23,21 @@ This is an **F# / Fable** binding library for the [smolvm Node.js SDK](https://g
 # Restore packages
 dotnet restore
 
-# Build main library only
+# Build main library only (0 errors, 0 warnings)
 dotnet build SmolVm.Fable.fsproj
 
-# Run tests (all 54 pass)
+# Run all 54 snapshot tests on .NET
 dotnet run --project tests/SmolVm.Fable.Tests/SmolVm.Fable.Tests.fsproj
 
-# Transpile to JavaScript via Fable 5
-fable tests/SmolVm.Fable.Tests/SmolVm.Fable.Tests.fsproj --noCache
+# Transpile library + demo to JavaScript via Fable 5
+fable demo/Demo.fsproj --noCache
 
-# Run transpiled tests on Node
-node tests/SmolVm.Fable.Tests/.fable/Main.js
+# Run transpiled demo on Node (requires smolvm daemon)
+cd demo && fable --noCache && node Demo.fs.js
 ```
+
+> **Snapshot tests are .NET-only.** `Scriptorium.Nib.Snapshot` 0.2.0 does
+> not ship Fable JS runtime files, so snapshot tests cannot run on Node.
 
 ## FSI MCP Server (for AI-assisted development)
 

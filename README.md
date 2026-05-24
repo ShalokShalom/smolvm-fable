@@ -17,6 +17,114 @@ Node.js-oriented convenience preset for common JavaScript workloads.
 | Error hierarchy (`SmolvmError` … `ExecutionError`) | ✅ Stable |
 | NuGet package | 🚧 Not yet published |
 
+## Quick Start
+
+*Mirrors the official [smolvm SDK Quick Start](https://github.com/smol-machines/smolvm-sdk/tree/main/smolvm-node#quick-start)*
+
+### Basic Usage
+
+Create a machine, execute a command, and clean up:
+
+```fsharp
+open SmolVm.Types
+open SmolVm.Machine
+open SmolVm.Execution
+
+let config =
+    { name      = "my-machine"
+      serverUrl = None      // defaults to http://127.0.0.1:8080
+      mounts    = None
+      ports     = None
+      resources = None }
+
+async {
+    let! m = Machine.Create config |> Async.AwaitPromise
+    try
+        // Execute a command in the VM
+        let! echo = m.Exec([| "echo"; "Hello, World!" |]) |> Async.AwaitPromise
+        printfn "%s" echo.Stdout  // "Hello, World!\n"
+
+        // Run a command in a container image
+        let! py   = m.Run("python:3.12", [| "python"; "-c"; "print(2+2)" |]) |> Async.AwaitPromise
+        printfn "%s" py.Stdout    // "4\n"
+    finally
+        do! m.Stop()   |> Async.AwaitPromise
+        do! m.Delete() |> Async.AwaitPromise
+} |> Async.StartAsPromise |> ignore
+```
+
+### Helper Functions
+
+For short-lived tasks, use `withMachine` for automatic cleanup:
+
+```fsharp
+open SmolVm.Machine
+
+let result =
+    withMachine config (fun m ->
+        async {
+            let! r = m.Exec([| "uname"; "-a" |]) |> Async.AwaitPromise
+            return r
+        } |> Async.StartAsPromise
+    ) |> Async.AwaitPromise |> Async.RunSynchronously
+
+printfn "%s" result.Stdout
+// Machine is automatically stopped and deleted
+```
+
+`quickExec` and `quickRun` create a throw-away machine for single commands:
+
+```fsharp
+open SmolVm.Machine
+
+let! r = quickExec [| "whoami" |] None |> Async.AwaitPromise
+printfn "%s" r.Stdout
+```
+
+### Node.js Sandbox
+
+Run JavaScript code with the Node preset:
+
+```fsharp
+open SmolVm.Presets.Node
+
+async {
+    let! nm = NodeMachine.Create config |> Async.AwaitPromise
+    try
+        // Run JavaScript source
+        let! js = nm.RunCode "console.log(process.version); console.log(process.platform)"
+        printfn "%s" js.Stdout
+
+        // Run ES modules
+        let! esm = nm.RunESM "const msg = 'Hello from ESM!'; console.log(msg)"
+        printfn "%s" esm.Stdout
+
+        // Use npm
+        let! npm = nm.Npm([| "init"; "-y" |])
+        printfn "%s" npm.Stdout
+    finally
+        do! nm.Stop()   |> Async.AwaitPromise
+        do! nm.Delete() |> Async.AwaitPromise
+} |> Async.StartAsPromise |> ignore
+```
+
+### Error Handling
+
+The binding provides active patterns for matching SDK errors:
+
+```fsharp
+open SmolVm.Errors
+
+try
+    let! r = m.Exec([| "some-command" |]) |> Async.AwaitPromise
+    r.AssertSuccess() |> ignore
+with
+| NotFoundErr  e  -> printfn "Resource not found: %s" e.message
+| TimeoutErr   e  -> printfn "Command timed out: %s" e.message
+| ConnectionErr e -> printfn "Daemon unreachable: %s" e.message
+| SmolvmErr    e  -> printfn "SDK error [%s]: %s" e.code e.message
+```
+
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download) or later
@@ -30,26 +138,27 @@ Node.js-oriented convenience preset for common JavaScript workloads.
 # Restore NuGet packages
 dotnet restore
 
-# Build the binding library
+# Build the binding library (0 errors, 0 warnings)
 dotnet build SmolVm.Fable.fsproj
 
 # Run all 54 snapshot tests (on .NET)
 dotnet run --project tests/SmolVm.Fable.Tests/SmolVm.Fable.Tests.fsproj
 
-# Transpile to JavaScript via Fable 5 and run on Node
-fable tests/SmolVm.Fable.Tests/SmolVm.Fable.Tests.fsproj --noCache
-node tests/SmolVm.Fable.Tests/.fable/Main.js
+# Transpile the demo to JavaScript
+cd demo && fable --noCache && node Demo.fs.js
 ```
 
 Or use the `justfile`:
 
 ```bash
 just build         # restore + build
-just test          # run .NET tests
-just build-js      # Fable transpile
-just test-js       # run Node tests
-just test-all      # both
+just test          # run .NET tests (54 pass)
+just test-js       # build JS + run Node tests (main library only — snapshot tests are .NET-only)
 ```
+
+> **Note**: `just test-js` compiles and runs the library's unit tests on Node.
+> Snapshot tests (`MachineConfigTests`, `ExecResultTests`, etc.) are **.NET-only**
+> because `Scriptorium.Nib.Snapshot` does not ship Fable JS runtime files.
 
 ### Demo
 

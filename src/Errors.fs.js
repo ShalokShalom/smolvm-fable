@@ -1,6 +1,6 @@
 
-import { Record } from "../demo/fable_modules/fable-library-js.5.0.0/Types.js";
-import { record_type, int32_type, string_type } from "../demo/fable_modules/fable-library-js.5.0.0/Reflection.js";
+import { Record } from "../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Types.js";
+import { record_type, int32_type, string_type } from "../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Reflection.js";
 
 /**
  * Fields common to every smolvm SDK error class.

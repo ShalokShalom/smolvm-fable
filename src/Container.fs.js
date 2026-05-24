@@ -1,10 +1,10 @@
 
-import { class_type } from "../demo/fable_modules/fable-library-js.5.0.0/Reflection.js";
+import { class_type } from "../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Reflection.js";
 import { ContainerState } from "./Types.fs.js";
-import { awaitPromise, startAsPromise } from "../demo/fable_modules/fable-library-js.5.0.0/Async.js";
-import { singleton } from "../demo/fable_modules/fable-library-js.5.0.0/AsyncBuilder.js";
+import { awaitPromise, startAsPromise } from "../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Async.js";
+import { singleton } from "../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/AsyncBuilder.js";
 import { execOptsToJs } from "./Internal/Interop.fs.js";
-import { some } from "../demo/fable_modules/fable-library-js.5.0.0/Option.js";
+import { some } from "../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Option.js";
 import { ExecResult_$ctor_57DF0130 } from "./Execution.fs.js";
 
 export class Container {

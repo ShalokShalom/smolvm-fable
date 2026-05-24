@@ -28,7 +28,7 @@ test: restore
 
 # Run snapshot tests via Node (Fable-compiled)
 test-js: build-js
-    node tests/SmolVm.Fable.Tests/.fable/Main.js
+    cd tests/SmolVm.Fable.Tests && node Main.fs.js
 
 # Run both targets
 test-all: test test-js
@@ -41,13 +41,19 @@ update-snapshots: restore
 
 # Update (or create) all snapshots via Node
 update-snapshots-js: build-js
-    UPDATE_SNAPSHOTS=1 node tests/SmolVm.Fable.Tests/.fable/Main.js
+    cd tests/SmolVm.Fable.Tests && UPDATE_SNAPSHOTS=1 node Main.fs.js
 
 # ─── FSI MCP Server ─────────────────────────────────────────────────────────
 
-# Clone and build the FSI MCP server (one-time setup)
+# Clone and build the FSI MCP server (one-time setup).
+# If already cloned, just rebuilds.
 fsi-mcp-setup:
-    git clone https://github.com/jovaneyck/fsi-mcp-server.git tools/fsi-mcp-server
+    if [ -d tools/fsi-mcp-server ]; then \
+        echo "Already cloned, rebuilding..."; \
+    else \
+        git clone https://github.com/jovaneyck/fsi-mcp-server.git tools/fsi-mcp-server; \
+    fi
+    cd tools/fsi-mcp-server && sed -i 's/net9.0/net10.0/' server/fsi-mcp-server.fsproj
     dotnet build tools/fsi-mcp-server
 
 # Start the FSI MCP server on http://localhost:5020/sse
@@ -63,3 +69,5 @@ clean:
     dotnet clean tests/SmolVm.Fable.Tests/SmolVm.Fable.Tests.fsproj
     rm -rf tests/SmolVm.Fable.Tests/.fable
     rm -rf tests/SmolVm.Fable.Tests/node_modules
+    rm -f tests/SmolVm.Fable.Tests/*.fs.js
+    rm -rf tests/SmolVm.Fable.Tests/fable_modules
