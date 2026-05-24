@@ -46,20 +46,26 @@ type ExecOptions =
       workdir : string option
       timeout : int option }
 
-/// Upstream LogsOptions: follow?: boolean, since?: string — no tail field.
+/// Mirrors LogsQuery used by client.ts streamLogs.
+/// `tail` is supported by the HTTP client even though SDK types.ts omits it.
 [<Pojo>]
 type LogsOptions =
     { since  : string option
-      follow : bool option }
+      follow : bool option
+      tail   : int option }
 
-/// Mirrors ContainerMountSpec: source = virtiofs tag, target = container path.
+/// Mirrors ContainerMountSpec: tag is the virtiofs tag,
+/// target is the container-side mount path.
 [<Pojo>]
 type ContainerMount =
     { tag      : string
       target   : string
       readOnly : bool option }
 
-/// Mirrors the upstream ContainerOptions interface.
+/// SDK-level container creation options.
+/// Note: upstream types.ts ContainerOptions omits image/command but
+/// machine.ts createContainer uses them from this object before calling
+/// client.createContainer. The F# type follows actual usage.
 [<Pojo>]
 type ContainerOptions =
     { image   : string

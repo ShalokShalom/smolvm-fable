@@ -1,29 +1,87 @@
 module SmolVm.Errors
 
-open Fable.Core
+open Fable.Core.JsInterop
 
 // ============================================================================
-// Error hierarchy
-// Mirrors errors.ts: SmolvmError → NotFoundError | ConflictError | …
+// JS error interop
+//
+// The upstream SDK throws JS class instances (SmolvmError, NotFoundError, …)
+// which extend Error. F# `exception` declarations produce .NET exception
+// objects and cannot be matched against JS class instances in a `try/with`.
+//
+// Correct approach:
+//   - Catch `exn` (the raw JS Error object on the Fable/JS side)
+//   - Inspect e?name / e?code via Fable dynamic access
+//   - Use the active patterns below for ergonomic matching
+//
+// Example:
+//   try ... with
+//   | NotFoundErr e  -> printfn "Not found: %s" e.message
+//   | TimeoutErr  e  -> printfn "Timed out: %s" e.message
+//   | SmolvmErr   e  -> printfn "SDK error %s (%s)" e.message e.code
 // ============================================================================
 
-/// Base error raised by all smolvm SDK operations.
-exception SmolvmError of message: string * code: string * statusCode: int
+/// Fields common to every smolvm SDK error class.
+type SmolvmErrorInfo =
+    { name       : string
+      message    : string
+      code       : string
+      statusCode : int }
 
-/// Resource not found (HTTP 404). Corresponds to NotFoundError in JS.
-exception NotFoundError of message: string
+/// Try to extract smolvm error metadata from a raw JS exception.
+let tryParseSmolvmError (e: exn) : SmolvmErrorInfo option =
+    let js = box e
+    match js?name with
+    | "SmolvmError"
+    | "NotFoundError"
+    | "ConflictError"
+    | "BadRequestError"
+    | "TimeoutError"
+    | "InternalError"
+    | "ConnectionError" ->
+        Some { name       = js?name
+               message    = js?message
+               code       = js?code
+               statusCode = js?statusCode }
+    | _ -> None
 
-/// Resource conflict (HTTP 409). Corresponds to ConflictError in JS.
-exception ConflictError of message: string
+// Active patterns ─────────────────────────────────────────────────────────────
 
-/// Bad request (HTTP 400). Corresponds to BadRequestError in JS.
-exception BadRequestError of message: string
+/// Matches any smolvm SDK error.
+let (|SmolvmErr|_|)     (e: exn) = tryParseSmolvmError e
 
-/// Request or operation timeout (HTTP 408). Corresponds to TimeoutError in JS.
-exception TimeoutError of message: string
+/// Matches NotFoundError (HTTP 404).
+let (|NotFoundErr|_|)   (e: exn) =
+    match tryParseSmolvmError e with
+    | Some i when i.name = "NotFoundError"   -> Some i
+    | _                                       -> None
 
-/// Internal server error (HTTP 500/502/503). Corresponds to InternalError in JS.
-exception InternalError of message: string
+/// Matches ConflictError (HTTP 409).
+let (|ConflictErr|_|)   (e: exn) =
+    match tryParseSmolvmError e with
+    | Some i when i.name = "ConflictError"   -> Some i
+    | _                                       -> None
 
-/// Network or connection failure. Corresponds to ConnectionError in JS.
-exception ConnectionError of message: string
+/// Matches BadRequestError (HTTP 400).
+let (|BadRequestErr|_|) (e: exn) =
+    match tryParseSmolvmError e with
+    | Some i when i.name = "BadRequestError" -> Some i
+    | _                                       -> None
+
+/// Matches TimeoutError (HTTP 408 / request timeout).
+let (|TimeoutErr|_|)    (e: exn) =
+    match tryParseSmolvmError e with
+    | Some i when i.name = "TimeoutError"    -> Some i
+    | _                                       -> None
+
+/// Matches InternalError (HTTP 500/502/503).
+let (|InternalErr|_|)   (e: exn) =
+    match tryParseSmolvmError e with
+    | Some i when i.name = "InternalError"   -> Some i
+    | _                                       -> None
+
+/// Matches ConnectionError (network / ECONNREFUSED).
+let (|ConnectionErr|_|) (e: exn) =
+    match tryParseSmolvmError e with
+    | Some i when i.name = "ConnectionError" -> Some i
+    | _                                       -> None

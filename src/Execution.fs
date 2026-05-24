@@ -1,15 +1,42 @@
 module SmolVm.Execution
 
 open Fable.Core
+open Fable.Core.JsInterop
 open SmolVm.Types
+
+// ============================================================================
+// ExecutionError
+//
+// The upstream SDK's ExecutionError is a JS class (extends Error) with
+// exitCode, stdout, stderr properties. We import it via [<Import>] so that
+// AssertSuccess throws the *same* JS class instance the upstream SDK throws,
+// keeping try/with blocks on both sides compatible.
+// ============================================================================
+
+[<Import("ExecutionError", "smolvm")>]
+type JsExecutionError =
+    inherit System.Exception
+    abstract exitCode : int
+    abstract stdout   : string
+    abstract stderr   : string
+
+/// Private constructor binding — lets us raise a JS ExecutionError directly.
+[<Import("ExecutionError", "smolvm")>]
+let private newExecutionError (exitCode: int) (stdout: string) (stderr: string) : JsExecutionError = jsNative
+
+/// Active pattern to catch a JS ExecutionError thrown by the smolvm SDK.
+/// Matches any exn whose JS `name` property is "ExecutionError".
+let (|ExecutionErr|_|) (e: exn) =
+    let js = box e
+    if js?name = "ExecutionError" then
+        Some {| exitCode = js?exitCode : int
+               stdout   = js?stdout   : string
+               stderr   = js?stderr   : string |}
+    else None
 
 // ============================================================================
 // ExecResult  —  mirrors execution.ts : ExecResult class
 // ============================================================================
-
-/// Thrown by ExecResult.assertSuccess when the command exits with a non-zero code.
-/// Mirrors ExecutionError in execution.ts.
-exception ExecutionError of exitCode: int * stdout: string * stderr: string
 
 /// Rich result of a command execution.
 /// Mirrors the ExecResult class from execution.ts.
@@ -25,11 +52,9 @@ type ExecResult(response: ExecResponse) =
     member _.Stderr   : string = response.stderr
 
     /// True when the exit code is 0.
-    /// Mirrors the `success` getter in execution.ts.
     member this.Success : bool = this.ExitCode = 0
 
     /// Combined stdout + stderr output.
-    /// Mirrors the `output` getter in execution.ts.
     member this.Output : string =
         match this.Stdout, this.Stderr with
         | s, e when s <> "" && e <> "" -> s + "\n" + e
@@ -37,9 +62,10 @@ type ExecResult(response: ExecResponse) =
         | _, e                         -> e
 
     /// Assert that the command succeeded (exit code 0).
-    /// Raises ExecutionError if the exit code is non-zero.
-    /// Returns self for chaining — mirrors assertSuccess() in execution.ts.
+    /// Raises the JS ExecutionError class so that catch clauses in both
+    /// F# and JS code see the same error type.
+    /// Returns self for chaining.
     member this.AssertSuccess() : ExecResult =
         if not this.Success then
-            raise (ExecutionError (this.ExitCode, this.Stdout, this.Stderr))
+            raise (newExecutionError this.ExitCode this.Stdout this.Stderr)
         this

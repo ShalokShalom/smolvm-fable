@@ -13,8 +13,8 @@ let toEnvVars (env: Map<string,string> option) : obj =
         |> Array.map (fun (k,v) -> {| name = k; value = v |})
         |> box
 
-/// Serialise ExecOptions to the JS object shape sent to the smolvm API.
-/// Field names match ExecRequest / RunRequest from the OpenAPI model:
+/// Serialise ExecOptions to the JS object shape accepted by the API.
+/// Field names match ExecRequest / RunRequest:
 ///   env -> EnvVar[], workdir -> string?, timeoutSecs -> number?
 let execOptsToJs (o: ExecOptions) : obj =
     jsOptions<obj> (fun x ->
@@ -22,22 +22,23 @@ let execOptsToJs (o: ExecOptions) : obj =
         x?workdir     <- Option.toObj o.workdir
         x?timeoutSecs <- Option.toNullable o.timeout)
 
-/// Serialise LogsOptions to the query-param shape accepted by streamLogs.
-/// Upstream LogsOptions has: follow?: boolean, since?: string  (no tail).
+/// Serialise LogsOptions to the LogsQuery shape used by client.ts streamLogs.
+/// `tail` is supported by the HTTP client even though SDK types.ts omits it.
 let logsOptsToJs (o: LogsOptions) : obj =
     jsOptions<obj> (fun x ->
         x?follow <- Option.toNullable o.follow
-        x?since  <- Option.toObj o.since)
+        x?since  <- Option.toObj o.since
+        x?tail   <- Option.toNullable o.tail)
 
 /// Serialise ContainerOptions to the CreateContainerRequest shape.
-/// Mounts: upstream ContainerMountSpec uses { source: tag, target, readonly }.
+/// ContainerMount.tag maps to source (the virtiofs tag used as host-side key).
 let containerOptsToJs (options: ContainerOptions) : obj =
     let mounts =
         options.mounts
         |> Option.map (fun ms ->
             ms |> Array.map (fun m ->
-                {| source   = m.tag
-                   target   = m.target
+                {| source       = m.tag
+                   target       = m.target
                    ``readonly`` = Option.toNullable m.readOnly |} |> box))
         |> Option.toObj
     jsOptions<obj> (fun x ->
