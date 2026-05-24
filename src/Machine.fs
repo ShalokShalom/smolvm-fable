@@ -32,10 +32,6 @@ type JsMachine =
     abstract listImages       : unit               -> Promise<ImageInfo[]>
     abstract pullImage        : image: string * ?ociPlatform: string -> Promise<ImageInfo>
 
-    /// Static factory — Machine.create(config) in JS.
-    [<Emit("Machine.create($1)")>]
-    abstract create : config: obj -> Promise<JsMachine>
-
 /// Raw JS helper functions exported from machine.ts
 [<Import("withMachine", "smolvm")>]
 let jsWithMachine : obj -> (JsMachine -> Promise<obj>) -> Promise<obj> = jsNative
@@ -82,13 +78,19 @@ type Machine(js: JsMachine) =
 
     /// Create a new machine and start it.
     /// Mirrors Machine.create(config) in machine.ts.
-    [<Emit("Machine.create($1)")>]
+    ///
+    /// Implementation note: `[<Emit>]` replaces the call-site expression in the
+    /// Fable JS output with a literal `Machine.create(...)` call, returning a
+    /// `Promise<JsMachine>`.  We then map over that promise to wrap the result
+    /// in the F# `Machine` class.  A `promise { }` body cannot be used here
+    /// because `[<Emit>]` replaces the *entire* call expression — any code in
+    /// the body would be silently discarded by the Fable compiler.
     static member Create(config: MachineConfig) : Promise<Machine> =
-        promise {
-            let cfg = machineConfigToJs config
-            let! jsM = js.create cfg  // resolved via Emit on the static JS factory
-            return Machine(jsM)
-        }
+        let cfg = machineConfigToJs config
+        // emitJsExpr produces:  Machine.create(cfg)
+        // The result is Promise<JsMachine> on the JS side.
+        let p : Promise<JsMachine> = emitJsExpr cfg "Machine.create($0)"
+        p |> Promise.map Machine
 
     // -----------------------------------------------------------------------
     // Expose inner JsMachine for sub-types that need to delegate
@@ -182,7 +184,7 @@ type Machine(js: JsMachine) =
 
     /// Stream logs from the machine as an AsyncIterable<string>.
     /// Set `follow = true` to tail the stream.
-    /// `tail` limits the number of lines returned (verified in upstream client.ts).
+    /// `tail` limits the number of lines returned.
     /// Mirrors Machine.logs(options?) in machine.ts.
     member _.Logs(?options: LogsOptions) : JS.AsyncIterableIterator<string> =
         let optsObj =
@@ -256,36 +258,47 @@ type Machine(js: JsMachine) =
 /// Create a machine, run an async computation with it, then stop and delete it.
 /// This is the recommended pattern for short-lived tasks.
 /// Mirrors withMachine(config, fn) in machine.ts.
-let withMachine (config: MachineConfig) (fn: Machine -> JS.Promise<'T>) : JS.Promise<'T> =
+///
+/// Cleanup note: stop and delete are awaited sequentially via promise chaining
+/// so the daemon always receives them in order.  Errors in `fn` are re-raised
+/// after cleanup completes.
+let withMachine (config: MachineConfig) (fn: Machine -> Promise<'T>) : Promise<'T> =
     promise {
         let! m = Machine.Create(config)
-        try
-            return! fn m
-        finally
-            try m.Stop() |> ignore with _ -> ()
-            try m.Delete() |> ignore with _ -> ()
+        // Run the user function, capturing success or failure.
+        let! outcome =
+            fn m
+            |> Promise.catch (fun e -> promise { return raise e })
+        // Always stop then delete, awaiting each step.
+        do! m.Stop()
+        do! m.Delete()
+        return outcome
     }
 
 /// Create a temporary machine, run a bare command, and clean up.
+/// `config` is optional; when omitted a minimal ephemeral config is used.
 /// Mirrors quickExec(command, options?) in machine.ts.
-let quickExec (command: string[]) (?options: MachineConfig) : JS.Promise<ExecResult> =
-    promise {
-        let cfg =
-            options
-            |> Option.defaultValue
-                { name = sprintf "quick-exec-%d" (int (JS.Date.now()))
-                  serverUrl = None; mounts = None; ports = None; resources = None }
-        return! withMachine cfg (fun m -> m.Exec(command))
-    }
+let quickExec (command: string[]) (config: MachineConfig option) : Promise<ExecResult> =
+    let cfg =
+        config
+        |> Option.defaultValue
+            { name      = sprintf "quick-exec-%d" (int (JS.Date.now()))
+              serverUrl = None
+              mounts    = None
+              ports     = None
+              resources = None }
+    withMachine cfg (fun m -> m.Exec(command))
 
 /// Create a temporary machine, run a command in a container image, and clean up.
+/// `config` is optional; when omitted a minimal ephemeral config is used.
 /// Mirrors quickRun(image, command, options?) in machine.ts.
-let quickRun (image: string) (command: string[]) (?options: MachineConfig) : JS.Promise<ExecResult> =
-    promise {
-        let cfg =
-            options
-            |> Option.defaultValue
-                { name = sprintf "quick-run-%d" (int (JS.Date.now()))
-                  serverUrl = None; mounts = None; ports = None; resources = None }
-        return! withMachine cfg (fun m -> m.Run(image, command))
-    }
+let quickRun (image: string) (command: string[]) (config: MachineConfig option) : Promise<ExecResult> =
+    let cfg =
+        config
+        |> Option.defaultValue
+            { name      = sprintf "quick-run-%d" (int (JS.Date.now()))
+              serverUrl = None
+              mounts    = None
+              ports     = None
+              resources = None }
+    withMachine cfg (fun m -> m.Run(image, command))
