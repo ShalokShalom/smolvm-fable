@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>SmolVm.Fable</AssemblyName>
+    <RootNamespace>SmolVm</RootNamespace>
+    <Optimize>false</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Fable SDK -->
+    <PackageReference Include="Fable.Core" Version="4.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="src/Types.fs" />
+    <Compile Include="src/Errors.fs" />
+    <Compile Include="src/Execution.fs" />
+    <Compile Include="src/Container.fs" />
+    <Compile Include="src/Machine.fs" />
+    <Compile Include="src/Presets/Python.fs" />
+    <Compile Include="src/Presets/Node.fs" />
+  </ItemGroup>
+
+</Project>
