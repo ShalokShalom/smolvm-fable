@@ -1,7 +1,7 @@
 # smolvm-fable
 
-Idiomatic **F# / [Fable 5](https://fable.io)** bindings for the
-[smolvm Node.js SDK](https://github.com/smol-machines/smolvm-sdk/tree/main/smolvm-node).
+Idiomatic **F# / [Fable 5](https://fable.io)** bindings for
+[smolvm(https://github.com/smol-machines/smolvm-sdk/).
 
 This library is a **Fable-compatible wrapper** around the upstream `smolvm`
 npm package. It exposes the core `smolvm-node` API as typed F# with
@@ -18,8 +18,6 @@ Node.js-oriented convenience preset for common JavaScript workloads.
 | NuGet package | 🚧 Not yet published |
 
 ## Quick Start
-
-*Mirrors the official [smolvm SDK Quick Start](https://github.com/smol-machines/smolvm-sdk/tree/main/smolvm-node#quick-start)*
 
 ### Basic Usage
 
@@ -40,13 +38,12 @@ let config =
 async {
     let! m = Machine.Create config |> Async.AwaitPromise
     try
-        // Execute a command in the VM
         let! echo = m.Exec([| "echo"; "Hello, World!" |]) |> Async.AwaitPromise
-        printfn "%s" echo.Stdout  // "Hello, World!\n"
+        printfn "%s" echo.Stdout 
 
         // Run a command in a container image
         let! py   = m.Run("python:3.12", [| "python"; "-c"; "print(2+2)" |]) |> Async.AwaitPromise
-        printfn "%s" py.Stdout    // "4\n"
+        printfn "%s" py.Stdout
     finally
         do! m.Stop()   |> Async.AwaitPromise
         do! m.Delete() |> Async.AwaitPromise
@@ -176,13 +173,16 @@ Requires a running smolvm daemon (default: `http://127.0.0.1:8080`).
 
 ## FSI MCP Server
 
-This project includes an optional [FSI MCP Server](https://github.com/jovaneyck/fsi-mcp-server) integration for AI-assisted F# development. It exposes F# Interactive as an MCP tool so that AI agents can evaluate code, load scripts, and inspect REPL output in the same session you're working in.
+This project includes an optional [FSI MCP Server](https://github.com/jovaneyck/fsi-mcp-server) integration for AI-assisted F# development.   
+It exposes F# Interactive as an MCP tool so that AI agents can evaluate code, load scripts, and inspect REPL output in the same session you're working in.
 
 ### One-time setup
 
 ```bash
 just fsi-mcp-setup
 ```
+
+It is meant to work with the Opencode Desktop or CLI app.
 
 ### Usage
 
