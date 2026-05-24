@@ -1,5 +1,5 @@
 
-import { class_type } from "../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Reflection.js";
+import { class_type } from "../demo/fable_modules/fable-library-js.5.0.0/Reflection.js";
 import { ExecutionError } from "smolvm";
 
 /**

@@ -1,15 +1,21 @@
 
-import { class_type } from "../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Reflection.js";
-import { awaitPromise, startAsPromise } from "../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Async.js";
-import { singleton } from "../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/AsyncBuilder.js";
-import { machineCreate } from "smolvm";
-import { defaultArg, some, map } from "../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Option.js";
+import { Machine as Machine_1 } from "smolvm";
+import { class_type } from "../demo/fable_modules/fable-library-js.5.0.0/Reflection.js";
+import { awaitPromise, startAsPromise } from "../demo/fable_modules/fable-library-js.5.0.0/Async.js";
+import { singleton } from "../demo/fable_modules/fable-library-js.5.0.0/AsyncBuilder.js";
+import { defaultArg, some, map } from "../demo/fable_modules/fable-library-js.5.0.0/Option.js";
 import { MachineConfig, MachineState } from "./Types.fs.js";
 import { containerOptsToJs, logsOptsToJs, execOptsToJs } from "./Internal/Interop.fs.js";
 import { ExecResult_$ctor_57DF0130 } from "./Execution.fs.js";
 import { Container_$ctor_Z702EEDE6 } from "./Container.fs.js";
-import { map as map_1 } from "../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Array.js";
-import { printf, toText } from "../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/String.js";
+import { map as map_1 } from "../demo/fable_modules/fable-library-js.5.0.0/Array.js";
+import { printf, toText } from "../demo/fable_modules/fable-library-js.5.0.0/String.js";
+
+export const _machineImport = Machine_1;
+
+function machineCreate(config) {
+    return _machineImport.create(config);
+}
 
 export class Machine {
     constructor(js) {

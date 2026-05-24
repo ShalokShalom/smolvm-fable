@@ -1,13 +1,13 @@
 
-import { unwrap, defaultArg, bind } from "../../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Option.js";
+import { unwrap, defaultArg, bind } from "../../demo/fable_modules/fable-library-js.5.0.0/Option.js";
 import { ExecOptions } from "../Types.fs.js";
-import { class_type } from "../../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Reflection.js";
-import { awaitPromise, startAsPromise } from "../../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Async.js";
-import { singleton } from "../../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/AsyncBuilder.js";
+import { class_type } from "../../demo/fable_modules/fable-library-js.5.0.0/Reflection.js";
+import { awaitPromise, startAsPromise } from "../../demo/fable_modules/fable-library-js.5.0.0/Async.js";
+import { singleton } from "../../demo/fable_modules/fable-library-js.5.0.0/AsyncBuilder.js";
 import { Machine__PullImage_27AED5E3, Machine__ListImages, Machine__GetContainer_Z721C83C5, Machine__ListContainers, Machine__CreateContainer_Z3B18001, Machine__Logs_774CA14C, Machine__Run_442174AB, Machine__Exec_Z27CFC470, Machine__Status, Machine__Delete, Machine__Stop, Machine__Start, Machine__get_Info, Machine__get_Mounts, Machine__get_State, Machine__get_IsStarted, Machine__get_Name, Machine_Create_Z4C8FDF79 } from "../Machine.fs.js";
-import { append } from "../../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Array.js";
+import { append } from "../../demo/fable_modules/fable-library-js.5.0.0/Array.js";
 import { ExecResult__get_Stdout } from "../Execution.fs.js";
-import { printf, toText } from "../../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/String.js";
+import { printf, toText } from "../../demo/fable_modules/fable-library-js.5.0.0/String.js";
 
 function toExecOptions(opts) {
     return new ExecOptions(bind((o) => o.env, opts), bind((o_1) => o_1.workdir, opts), bind((o_2) => o_2.timeout, opts));

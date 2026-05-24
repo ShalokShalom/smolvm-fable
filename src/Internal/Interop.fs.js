@@ -1,8 +1,8 @@
 
-import { map } from "../../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Array.js";
-import { toArray } from "../../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Map.js";
-import { jsOptions, defaultOf } from "../../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Util.js";
-import { map as map_1, toNullable } from "../../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Option.js";
+import { map } from "../../demo/fable_modules/fable-library-js.5.0.0/Array.js";
+import { toArray } from "../../demo/fable_modules/fable-library-js.5.0.0/Map.js";
+import { jsOptions, defaultOf } from "../../demo/fable_modules/fable-library-js.5.0.0/Util.js";
+import { map as map_1, toNullable } from "../../demo/fable_modules/fable-library-js.5.0.0/Option.js";
 
 /**
  * Convert an optional env map to the EnvVar[] shape the smolvm API expects.

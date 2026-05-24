@@ -1,0 +1,27 @@
+{
+  "name": "smolvm-fable",
+  "version": "1.0.0",
+  "description": "Idiomatic **F# / [Fable](https://fable.io)** bindings for the [smolvm Node.js SDK](https://github.com/smol-machines/smolvm-sdk/tree/main/smolvm-node).",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShalokShalom/smolvm-fable.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ShalokShalom/smolvm-fable/issues"
+  },
+  "homepage": "https://github.com/ShalokShalom/smolvm-fable#readme",
+  "dependencies": {
+    "smolvm": "file:../../../../tmp/smolvm-sdk/smolvm-node"
+  }
+}

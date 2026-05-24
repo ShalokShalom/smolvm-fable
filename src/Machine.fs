@@ -37,10 +37,12 @@ type JsMachine =
     abstract listImages      : unit         -> Promise<ImageInfo[]>
     abstract pullImage       : image: string * ?ociPlatform: string -> Promise<ImageInfo>
 
-/// Static factory — Fable emits `import { machineCreate } from 'smolvm'`
-/// and calls it directly, avoiding double-wrapped Promises and scope issues.
-[<ImportMember("smolvm")>]
-let private machineCreate (config: MachineConfig) : Promise<JsMachine> = jsNative
+/// Import Machine class to force Fable import statement.
+let private _machineImport : JsMachine = import "Machine" "smolvm"
+
+/// Static factory — calls Machine.create(config) from the smolvm SDK.
+let private machineCreate (config: MachineConfig) : Promise<JsMachine> =
+    emitJsExpr (config, _machineImport) "$1.create($0)"
 
 type Machine(js: JsMachine) =
 

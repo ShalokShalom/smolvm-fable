@@ -1,6 +1,6 @@
 
-import { Union, Record } from "../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Types.js";
-import { float64_type, int64_type, class_type, union_type, array_type, option_type, bool_type, string_type, record_type, int32_type } from "../tests/SmolVm.Fable.Tests/fable_modules/fable-library-js.5.0.0/Reflection.js";
+import { Union, Record } from "../demo/fable_modules/fable-library-js.5.0.0/Types.js";
+import { float64_type, int64_type, class_type, union_type, array_type, option_type, bool_type, string_type, record_type, int32_type } from "../demo/fable_modules/fable-library-js.5.0.0/Reflection.js";
 
 export class PortSpec extends Record {
     constructor(host, guest) {
