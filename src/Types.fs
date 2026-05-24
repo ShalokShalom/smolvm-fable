@@ -58,16 +58,18 @@ type MachineConfig =
       resources : ResourceSpec option }
 
 /// Machine lifecycle state.
+/// Cases are prefixed to avoid name collisions with ContainerState.
 type MachineState =
-    | Created
-    | Running
-    | Stopped
+    | MachineCreated
+    | MachineRunning
+    | MachineStopped
 
 /// Container lifecycle state.
+/// Cases are prefixed to avoid name collisions with MachineState.
 type ContainerState =
-    | Created
-    | Running
-    | Stopped
+    | ContainerCreated
+    | ContainerRunning
+    | ContainerStopped
 
 /// Options for command execution.
 [<Pojo>]
@@ -80,23 +82,28 @@ type ExecOptions =
       timeout : int option }
 
 /// Options for log streaming.
+/// Mirrors LogsOptions / LogsQuery in types.ts and client.ts.
 [<Pojo>]
 type LogsOptions =
     { /// Only return logs after this timestamp (ISO-8601)
       since  : string option
       /// Whether to follow the log stream
-      follow : bool option }
+      follow : bool option
+      /// Number of tail lines to return
+      tail   : int option }
 
 /// A single volume mount for a container (source = virtiofs tag).
+/// Mirrors ContainerMountSpec in the generated OpenAPI models.
 [<Pojo>]
 type ContainerMount =
-    { /// virtiofs tag from the parent machine's MountSpec
-      tag      : string
+    { /// virtiofs tag from the parent machine’s MountSpec
+      source   : string
       /// Target path inside the container
       target   : string
-      readonly : bool option }
+      readOnly : bool option }
 
 /// Options for container creation.
+/// Mirrors ContainerOptions in types.ts (workdir + mounts only).
 [<Pojo>]
 type ContainerOptions =
     { /// OCI image reference (e.g. "python:3.12-alpine")

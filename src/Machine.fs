@@ -32,10 +32,9 @@ type JsMachine =
     abstract listImages       : unit               -> Promise<ImageInfo[]>
     abstract pullImage        : image: string * ?ociPlatform: string -> Promise<ImageInfo>
 
-[<Import("Machine", "smolvm")>]
-type JsMachineStatic =
-    [<Emit("Machine.create($0)")>]
-    static member create(config: obj) : Promise<JsMachine> = jsNative
+    /// Static factory — Machine.create(config) in JS.
+    [<Emit("Machine.create($1)")>]
+    abstract create : config: obj -> Promise<JsMachine>
 
 /// Raw JS helper functions exported from machine.ts
 [<Import("withMachine", "smolvm")>]
@@ -83,11 +82,18 @@ type Machine(js: JsMachine) =
 
     /// Create a new machine and start it.
     /// Mirrors Machine.create(config) in machine.ts.
+    [<Emit("Machine.create($1)")>]
     static member Create(config: MachineConfig) : Promise<Machine> =
         promise {
-            let! jsM = JsMachineStatic.create(machineConfigToJs config)
+            let cfg = machineConfigToJs config
+            let! jsM = js.create cfg  // resolved via Emit on the static JS factory
             return Machine(jsM)
         }
+
+    // -----------------------------------------------------------------------
+    // Expose inner JsMachine for sub-types that need to delegate
+    // -----------------------------------------------------------------------
+    member internal _.Js = js
 
     // -----------------------------------------------------------------------
     // Identity / state
@@ -105,9 +111,9 @@ type Machine(js: JsMachine) =
     member _.State : MachineState option =
         js.state
         |> Option.map (function
-            | "running" -> Running
-            | "stopped" -> Stopped
-            | _         -> Created)
+            | "running" -> MachineRunning
+            | "stopped" -> MachineStopped
+            | _         -> MachineCreated)
 
     /// Mount info for all host mounts attached to this machine.
     /// Mirrors Machine.mounts in machine.ts.
@@ -176,11 +182,15 @@ type Machine(js: JsMachine) =
 
     /// Stream logs from the machine as an AsyncIterable<string>.
     /// Set `follow = true` to tail the stream.
+    /// `tail` limits the number of lines returned (verified in upstream client.ts).
     /// Mirrors Machine.logs(options?) in machine.ts.
     member _.Logs(?options: LogsOptions) : JS.AsyncIterableIterator<string> =
         let optsObj =
             options
-            |> Option.map (fun o -> {| follow = o.follow; since = o.since |})
+            |> Option.map (fun o ->
+                {| follow = o.follow
+                   since  = o.since
+                   tail   = o.tail |})
         match optsObj with
         | None   -> unbox (js.logs())
         | Some o -> unbox (js.logs(upcast o))
@@ -194,18 +204,12 @@ type Machine(js: JsMachine) =
     member _.CreateContainer(options: ContainerOptions) : Promise<Container> =
         promise {
             let env = toEnvVars options.env
-            let mounts =
-                options.mounts
-                |> Option.map (Array.map (fun m ->
-                    {| source   = m.tag
-                       target   = m.target
-                       readonly = m.readonly |}))
             let optsObj =
                 {| image   = options.image
                    command = options.command
                    env     = env
                    workdir = options.workdir
-                   mounts  = mounts |}
+                   mounts  = options.mounts |}
             let! raw = js.createContainer(upcast optsObj)
             return Container(unbox<JsContainer> raw)
         }
@@ -258,8 +262,8 @@ let withMachine (config: MachineConfig) (fn: Machine -> JS.Promise<'T>) : JS.Pro
         try
             return! fn m
         finally
-            try js.stop() |> ignore with _ -> ()
-            try js.delete() |> ignore with _ -> ()
+            try m.Stop() |> ignore with _ -> ()
+            try m.Delete() |> ignore with _ -> ()
     }
 
 /// Create a temporary machine, run a bare command, and clean up.
@@ -268,7 +272,9 @@ let quickExec (command: string[]) (?options: MachineConfig) : JS.Promise<ExecRes
     promise {
         let cfg =
             options
-            |> Option.defaultValue { name = sprintf "quick-exec-%d" (System.DateTime.UtcNow.Ticks); serverUrl = None; mounts = None; ports = None; resources = None }
+            |> Option.defaultValue
+                { name = sprintf "quick-exec-%d" (int (JS.Date.now()))
+                  serverUrl = None; mounts = None; ports = None; resources = None }
         return! withMachine cfg (fun m -> m.Exec(command))
     }
 
@@ -278,6 +284,8 @@ let quickRun (image: string) (command: string[]) (?options: MachineConfig) : JS.
     promise {
         let cfg =
             options
-            |> Option.defaultValue { name = sprintf "quick-run-%d" (System.DateTime.UtcNow.Ticks); serverUrl = None; mounts = None; ports = None; resources = None }
+            |> Option.defaultValue
+                { name = sprintf "quick-run-%d" (int (JS.Date.now()))
+                  serverUrl = None; mounts = None; ports = None; resources = None }
         return! withMachine cfg (fun m -> m.Run(image, command))
     }

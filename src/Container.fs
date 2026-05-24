@@ -93,9 +93,9 @@ type Container(js: JsContainer) =
     /// Current lifecycle state.
     member _.State : ContainerState =
         match js.state with
-        | "running" -> Running
-        | "stopped" -> Stopped
-        | _         -> Created
+        | "running" -> ContainerRunning
+        | "stopped" -> ContainerStopped
+        | _         -> ContainerCreated
 
     /// OCI image reference the container was started from.
     member _.Image : string = js.image
