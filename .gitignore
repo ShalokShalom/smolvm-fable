@@ -4,6 +4,8 @@ obj/
 
 # Fable
 .fable/
+fable_modules/
+*.fs.js
 
 # Node
 node_modules/

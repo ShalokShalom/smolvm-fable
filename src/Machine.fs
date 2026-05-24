@@ -12,9 +12,9 @@ open SmolVm.Internal.Interop
 // JsMachine interface
 //
 // Mirrors the public surface of the Machine class exported from "smolvm".
-// The static factory Machine.create(config) is bound separately via
-// [<ImportMember>] so Fable emits a proper ES-module static import rather
-// than a fragile emitJsExpr string that produces a double-wrapped Promise.
+// The static factory Machine.create(config) is bound via the import function
+// and emitJsExpr to avoid fragile Emit strings that produce double-wrapped
+// Promises.
 // ============================================================================
 
 [<Import("Machine", "smolvm")>]
@@ -47,7 +47,7 @@ let private machineCreate (config: MachineConfig) : Promise<JsMachine> =
 type Machine(js: JsMachine) =
 
     /// Create and start a machine. Mirrors Machine.create(config) in JS.
-    /// MachineConfig is [<Pojo>] so Fable passes it as a plain JS object.
+    /// MachineConfig records are serialised as plain JS objects by Fable 5.
     static member Create(config: MachineConfig) : Promise<Machine> =
         async {
             let! m = Async.AwaitPromise(machineCreate config)

@@ -1,5 +1,5 @@
 # smolvm-fable — task runner
-# Requires: just, dotnet >=10, node >=20, fable
+# Requires: just, dotnet >=10, node >=20, fable (dotnet tool install --global fable)
 
 # Default: list all recipes
 default:
@@ -18,7 +18,7 @@ build: restore
 
 # Transpile the test project to JavaScript via Fable
 build-js: restore
-    cd tests/SmolVm.Fable.Tests && dotnet fable --noCache
+    cd tests/SmolVm.Fable.Tests && fable --noCache
 
 # ─── Tests ───────────────────────────────────────────────────────────────────
 
