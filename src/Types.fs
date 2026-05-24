@@ -18,6 +18,8 @@ type ResourceSpec =
     { vcpus  : int option
       memory : int option }
 
+/// Passed directly to Machine.create() in JS — Fable serialises [<Pojo>]
+/// records to plain JS objects, so no manual conversion is needed.
 [<Pojo>]
 type MachineConfig =
     { name      : string
@@ -44,18 +46,20 @@ type ExecOptions =
       workdir : string option
       timeout : int option }
 
+/// Upstream LogsOptions: follow?: boolean, since?: string — no tail field.
 [<Pojo>]
 type LogsOptions =
     { since  : string option
-      follow : bool option
-      tail   : int option }
+      follow : bool option }
 
+/// Mirrors ContainerMountSpec: source = virtiofs tag, target = container path.
 [<Pojo>]
 type ContainerMount =
-    { source   : string
+    { tag      : string
       target   : string
       readOnly : bool option }
 
+/// Mirrors the upstream ContainerOptions interface.
 [<Pojo>]
 type ContainerOptions =
     { image   : string

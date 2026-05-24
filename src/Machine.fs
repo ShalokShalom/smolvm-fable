@@ -27,10 +27,20 @@ type JsMachine =
     abstract listImages       : unit           -> Promise<ImageInfo[]>
     abstract pullImage        : image: string * ?ociPlatform: string -> Promise<ImageInfo>
 
+[<Import("Machine", "smolvm")>]
+type JsMachineStatic =
+    [<Emit("new $0($1)")>]
+    abstract Create : config: MachineConfig -> JsMachine
+
+[<ImportDefault("smolvm")>]
+let private JsMachineClass : JsMachineStatic = jsNative
+
 type Machine(js: JsMachine) =
+    /// Create and start a machine. Mirrors Machine.create(config) in JS.
+    /// Upstream Machine.create() calls new Machine(config) then machine.start();
+    /// MachineConfig is a [<Pojo>] so Fable passes it as a plain JS object.
     static member Create(config: MachineConfig) : Promise<Machine> =
-        let cfg = machineConfigToJs config
-        let p : Promise<JsMachine> = emitJsExpr cfg "Machine.create($0)"
+        let p : Promise<JsMachine> = emitJsExpr config "(async () => { const { Machine } = await import('smolvm'); return Machine.create($0); })()"
         p |> Promise.map Machine
     member internal _.Js = js
     member _.Name : string = js.name
@@ -92,12 +102,15 @@ type Machine(js: JsMachine) =
 let withMachine (config: MachineConfig) (fn: Machine -> Promise<'T>) : Promise<'T> =
     promise {
         let! m = Machine.Create(config)
-        let! outcome =
-            fn m
-            |> Promise.catch (fun e -> promise { return raise e })
-        do! m.Stop()
-        do! m.Delete()
-        return outcome
+        try
+            let! outcome = fn m
+            do! m.Stop()
+            do! m.Delete()
+            return outcome
+        with e ->
+            try do! m.Stop()  with _ -> ()
+            try do! m.Delete() with _ -> ()
+            return raise e
     }
 
 let quickExec (command: string[]) (config: MachineConfig option) : Promise<ExecResult> =

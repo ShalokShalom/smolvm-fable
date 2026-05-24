@@ -9,7 +9,7 @@ open SmolVm.Internal.Interop
 [<Import("Container", "smolvm")>]
 type JsContainer =
     abstract id        : string
-    abstract start     : unit     -> Promise<unit>
+    abstract start     : unit -> Promise<unit>
     abstract stop      : ?timeout : int -> Promise<unit>
     abstract delete    : ?force   : bool -> Promise<unit>
     abstract exec      : command  : string array * ?options : obj -> Promise<obj>
