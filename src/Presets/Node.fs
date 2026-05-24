@@ -21,6 +21,18 @@ open SmolVm.Machine
 [<Literal>]
 let DefaultImage = "node:22-alpine"
 
+/// Extract the execution-relevant fields from an optional CodeOptions value.
+/// Used internally to avoid repeating the same three Option.bind calls at
+/// every RunCode / RunFile / RunESM call site.
+let private toExecOptions (opts: CodeOptions option) : ExecOptions =
+    { env     = opts |> Option.bind (fun o -> o.env)
+      workdir = opts |> Option.bind (fun o -> o.workdir)
+      timeout = opts |> Option.bind (fun o -> o.timeout) }
+
+/// Resolve the OCI image from an optional CodeOptions, falling back to DefaultImage.
+let private resolveImage (opts: CodeOptions option) =
+    opts |> Option.bind (fun o -> o.image) |> Option.defaultValue DefaultImage
+
 /// A machine specialised for running JavaScript / Node.js code.
 /// Delegates lifecycle and execution to an inner Machine.
 /// Mirrors the NodeMachine class from presets/node.ts.
@@ -68,22 +80,12 @@ type NodeMachine private (inner: Machine) =
     /// Equivalent to `node -e <code>` in a container.
     /// Mirrors NodeMachine.runCode(code, options?) in node.ts.
     member _.RunCode(code: string, ?options: CodeOptions) : Promise<ExecResult> =
-        let image = options |> Option.bind (fun o -> o.image) |> Option.defaultValue DefaultImage
-        let exec: ExecOptions =
-            { env     = options |> Option.bind (fun o -> o.env)
-              workdir = options |> Option.bind (fun o -> o.workdir)
-              timeout = options |> Option.bind (fun o -> o.timeout) }
-        inner.Run(image, [| "node"; "-e"; code |], exec)
+        inner.Run(resolveImage options, [| "node"; "-e"; code |], toExecOptions options)
 
     /// Run a JavaScript file by path.
     /// Mirrors NodeMachine.runFile(path, options?) in node.ts.
     member _.RunFile(path: string, ?options: CodeOptions) : Promise<ExecResult> =
-        let image = options |> Option.bind (fun o -> o.image) |> Option.defaultValue DefaultImage
-        let exec: ExecOptions =
-            { env     = options |> Option.bind (fun o -> o.env)
-              workdir = options |> Option.bind (fun o -> o.workdir)
-              timeout = options |> Option.bind (fun o -> o.timeout) }
-        inner.Run(image, [| "node"; path |], exec)
+        inner.Run(resolveImage options, [| "node"; path |], toExecOptions options)
 
     /// Run npm commands.
     /// Mirrors NodeMachine.npm(args, options?) in node.ts.
@@ -111,12 +113,7 @@ type NodeMachine private (inner: Machine) =
     /// Run ES module code (passes --input-type=module to node).
     /// Mirrors NodeMachine.runESM(code, options?) in node.ts.
     member _.RunESM(code: string, ?options: CodeOptions) : Promise<ExecResult> =
-        let image = options |> Option.bind (fun o -> o.image) |> Option.defaultValue DefaultImage
-        let exec: ExecOptions =
-            { env     = options |> Option.bind (fun o -> o.env)
-              workdir = options |> Option.bind (fun o -> o.workdir)
-              timeout = options |> Option.bind (fun o -> o.timeout) }
-        inner.Run(image, [| "node"; "--input-type=module"; "-e"; code |], exec)
+        inner.Run(resolveImage options, [| "node"; "--input-type=module"; "-e"; code |], toExecOptions options)
 
     /// Evaluate a JavaScript expression and return JSON-serialised output.
     /// Mirrors NodeMachine.evaluate(expression, options?) in node.ts.
