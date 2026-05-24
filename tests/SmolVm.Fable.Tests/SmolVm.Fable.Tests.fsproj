@@ -22,7 +22,7 @@
     <PackageReference Include="Scriptorium.Nib" Version="0.*" />
     <PackageReference Include="Scriptorium.Nib.Snapshot" Version="0.*" />
     <PackageReference Include="Scriptorium.Quill" Version="0.*" />
-    <PackageReference Include="Fable.Core" Version="4.5.0" />
+    <PackageReference Include="Fable.Core" Version="5.*" />
   </ItemGroup>
 
   <ItemGroup>

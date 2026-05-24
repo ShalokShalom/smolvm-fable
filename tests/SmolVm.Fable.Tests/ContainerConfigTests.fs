@@ -12,7 +12,7 @@ open type Scriptorium.Quill.Test
 // Machine.createContainer / Machine.run in the JS SDK.  Key facts:
 //   - `image`   is required (string, not option)
 //   - `env`     is Map<string,string> option
-//   - mounts    use ContainerMount { source = virtiofs-tag; target = path }
+//   - mounts    use ContainerMount { tag = virtiofs-tag; target = path }
 //
 // NOTE: there is no ContainerConfig.Default in this binding.  Tests build
 // values from scratch using the actual F# record types.
@@ -66,10 +66,10 @@ let tests =
             test (
                 "config with volume mounts",
                 fun (t: TestContext) ->
-                    // ContainerMount.source is the virtiofs tag defined in
+                    // ContainerMount.tag is the virtiofs tag defined in
                     // MachineConfig.mounts[].tag — not a host path.
                     let mount : ContainerMount =
-                        { source   = "data"       // matches MountSpec.tag
+                        { tag      = "data"       // matches MountSpec.tag
                           target   = "/mnt/data"
                           readOnly = Some true }
                     let cfg = { defaultOpts with image = "busybox"; mounts = Some [| mount |] }
@@ -80,7 +80,7 @@ let tests =
                 "machine config with embedded container options",
                 fun (t: TestContext) ->
                     // Show the pairing: MountSpec.tag on the machine side must
-                    // match ContainerMount.source on the container side.
+                    // match ContainerMount.tag on the container side.
                     let machineMount : MountSpec =
                         { hostPath = "/host/data"; tag = "data"; readOnly = Some false }
                     let machineCfg : MachineConfig =
@@ -89,7 +89,7 @@ let tests =
                           ports = None
                           resources = Some { vcpus = None; memory = Some 256 } }
                     let containerMount : ContainerMount =
-                        { source = "data"; target = "/mnt/data"; readOnly = Some true }
+                        { tag = "data"; target = "/mnt/data"; readOnly = Some true }
                     let containerOpts : ContainerOptions =
                         { image   = "node:20-alpine"
                           command = None

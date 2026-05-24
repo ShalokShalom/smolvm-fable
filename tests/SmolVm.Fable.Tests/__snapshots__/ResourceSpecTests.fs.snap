@@ -1,0 +1,77 @@
+=== ResourceSpec > both fields None snapshot ===
+{
+  "name": "defer-all",
+  "serverUrl": null,
+  "mounts": null,
+  "ports": null,
+  "resources": {
+    "vcpus": null,
+    "memory": null
+  }
+}
+=== end-snapshot ===
+
+=== ResourceSpec > combined vcpus and memory snapshot ===
+{
+  "name": "full-spec",
+  "serverUrl": null,
+  "mounts": null,
+  "ports": null,
+  "resources": {
+    "vcpus": 4,
+    "memory": 4096
+  }
+}
+=== end-snapshot ===
+
+=== ResourceSpec > maximum memory (32 GiB) snapshot ===
+{
+  "name": "large",
+  "serverUrl": null,
+  "mounts": null,
+  "ports": null,
+  "resources": {
+    "vcpus": 8,
+    "memory": 32768
+  }
+}
+=== end-snapshot ===
+
+=== ResourceSpec > memory only snapshot ===
+{
+  "name": "mem-only",
+  "serverUrl": null,
+  "mounts": null,
+  "ports": null,
+  "resources": {
+    "vcpus": null,
+    "memory": 512
+  }
+}
+=== end-snapshot ===
+
+=== ResourceSpec > minimum memory (64 MiB) snapshot ===
+{
+  "name": "tiny",
+  "serverUrl": null,
+  "mounts": null,
+  "ports": null,
+  "resources": {
+    "vcpus": 1,
+    "memory": 64
+  }
+}
+=== end-snapshot ===
+
+=== ResourceSpec > vcpus only snapshot ===
+{
+  "name": "vcpu-only",
+  "serverUrl": null,
+  "mounts": null,
+  "ports": null,
+  "resources": {
+    "vcpus": 2,
+    "memory": null
+  }
+}
+=== end-snapshot ===

@@ -15,7 +15,7 @@ open type Scriptorium.Quill.Test
 //   - The type is ContainerOptions, not ContainerConfig.
 //   - `image` is required (string, not option).
 //   - `env` is Map<string,string> option, not string list.
-//   - Volume mounts use ContainerMount (source = virtiofs tag, target = path).
+//   - Volume mounts use ContainerMount (tag = virtiofs tag, target = path).
 // ---------------------------------------------------------------------------
 
 /// Minimal ContainerOptions: only the required `image` field.
@@ -62,10 +62,10 @@ let tests =
             test (
                 "options with volume mount",
                 fun (t: TestContext) ->
-                    // ContainerMount.source is the virtiofs tag from MountSpec.tag,
+                    // ContainerMount.tag is the virtiofs tag from MountSpec.tag,
                     // not a host path.  The host path is resolved by the daemon.
                     let mount : ContainerMount =
-                        { source   = "data"       // virtiofs tag
+                        { tag      = "data"       // virtiofs tag
                           target   = "/mnt/data"
                           readOnly = Some true }
                     let opts = { minimalOpts with mounts = Some [| mount |] }
@@ -76,14 +76,14 @@ let tests =
                 "machine config with mounts feeding a container",
                 fun (t: TestContext) ->
                     // Show the connection: MountSpec.tag on the machine side
-                    // must match ContainerMount.source on the container side.
+                    // must match ContainerMount.tag on the container side.
                     let machineMount : MountSpec =
                         { hostPath = "/host/data"; tag = "data"; readOnly = Some false }
                     let machineCfg : MachineConfig =
                         { name = "runner"; serverUrl = None
                           mounts = Some [| machineMount |]; ports = None; resources = None }
                     let containerMount : ContainerMount =
-                        { source = "data"; target = "/mnt/data"; readOnly = Some true }
+                        { tag = "data"; target = "/mnt/data"; readOnly = Some true }
                     let containerOpts : ContainerOptions =
                         { image   = "busybox"
                           command = Some [| "ls"; "/mnt/data" |]

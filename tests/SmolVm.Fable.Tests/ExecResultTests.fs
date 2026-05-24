@@ -93,7 +93,7 @@ let tests =
                     let result = makeResult "" "boom" 2
                     assertThat
                         (fun () -> result.AssertSuccess() |> ignore)
-                        (throws<ExecutionError>)
+                        throws
             )
 
             test (

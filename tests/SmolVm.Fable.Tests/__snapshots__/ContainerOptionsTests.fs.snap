@@ -1,0 +1,95 @@
+=== ContainerOptions > machine config with mounts feeding a container ===
+{
+  "container": {
+    "image": "busybox",
+    "command": [
+      "ls",
+      "/mnt/data"
+    ],
+    "env": null,
+    "workdir": null,
+    "mounts": [
+      {
+        "tag": "data",
+        "target": "/mnt/data",
+        "readOnly": true
+      }
+    ]
+  },
+  "machine": {
+    "name": "runner",
+    "serverUrl": null,
+    "mounts": [
+      {
+        "hostPath": "/host/data",
+        "tag": "data",
+        "readOnly": false
+      }
+    ],
+    "ports": null,
+    "resources": null
+  }
+}
+=== end-snapshot ===
+
+=== ContainerOptions > minimal options snapshot ===
+{
+  "image": "alpine:3.19",
+  "command": null,
+  "env": null,
+  "workdir": null,
+  "mounts": null
+}
+=== end-snapshot ===
+
+=== ContainerOptions > options with command ===
+{
+  "image": "alpine:3.19",
+  "command": [
+    "echo",
+    "hello"
+  ],
+  "env": null,
+  "workdir": null,
+  "mounts": null
+}
+=== end-snapshot ===
+
+=== ContainerOptions > options with env vars ===
+{
+  "image": "ubuntu:22.04",
+  "command": null,
+  "env": {
+    "HOME": "/root",
+    "PATH": "/usr/local/bin:/usr/bin"
+  },
+  "workdir": null,
+  "mounts": null
+}
+=== end-snapshot ===
+
+=== ContainerOptions > options with volume mount ===
+{
+  "image": "alpine:3.19",
+  "command": null,
+  "env": null,
+  "workdir": null,
+  "mounts": [
+    {
+      "tag": "data",
+      "target": "/mnt/data",
+      "readOnly": true
+    }
+  ]
+}
+=== end-snapshot ===
+
+=== ContainerOptions > options with workdir ===
+{
+  "image": "alpine:3.19",
+  "command": null,
+  "env": null,
+  "workdir": "/app",
+  "mounts": null
+}
+=== end-snapshot ===

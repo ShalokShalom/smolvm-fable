@@ -1,0 +1,98 @@
+=== ContainerConfig > config with command and workdir ===
+{
+  "image": "python:3.12-slim",
+  "command": [
+    "python",
+    "-c",
+    "print(\u0027hello\u0027)"
+  ],
+  "env": null,
+  "workdir": "/app",
+  "mounts": null
+}
+=== end-snapshot ===
+
+=== ContainerConfig > config with env vars ===
+{
+  "image": "ubuntu:22.04",
+  "command": null,
+  "env": {
+    "HOME": "/root",
+    "PATH": "/usr/local/bin:/usr/bin"
+  },
+  "workdir": null,
+  "mounts": null
+}
+=== end-snapshot ===
+
+=== ContainerConfig > config with volume mounts ===
+{
+  "image": "busybox",
+  "command": null,
+  "env": null,
+  "workdir": null,
+  "mounts": [
+    {
+      "tag": "data",
+      "target": "/mnt/data",
+      "readOnly": true
+    }
+  ]
+}
+=== end-snapshot ===
+
+=== ContainerConfig > default container config snapshot ===
+{
+  "image": "alpine:3.19",
+  "command": null,
+  "env": null,
+  "workdir": null,
+  "mounts": null
+}
+=== end-snapshot ===
+
+=== ContainerConfig > image-only config ===
+{
+  "image": "alpine:3.19",
+  "command": null,
+  "env": null,
+  "workdir": null,
+  "mounts": null
+}
+=== end-snapshot ===
+
+=== ContainerConfig > machine config with embedded container options ===
+{
+  "container": {
+    "image": "node:20-alpine",
+    "command": null,
+    "env": {
+      "NODE_ENV": "production"
+    },
+    "workdir": null,
+    "mounts": [
+      {
+        "tag": "data",
+        "target": "/mnt/data",
+        "readOnly": true
+      }
+    ]
+  },
+  "machine": {
+    "name": "node-runner",
+    "serverUrl": null,
+    "mounts": [
+      {
+        "hostPath": "/host/data",
+        "tag": "data",
+        "readOnly": false
+      }
+    ],
+    "ports": null,
+    "resources": {
+      "vcpus": null,
+      "memory": 256
+    }
+  }
+}
+=== end-snapshot ===

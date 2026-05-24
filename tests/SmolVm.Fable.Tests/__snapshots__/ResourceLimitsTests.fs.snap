@@ -1,0 +1,77 @@
+=== ResourceLimits > both fields None defers to daemon defaults ===
+{
+  "name": "defer-all",
+  "serverUrl": null,
+  "mounts": null,
+  "ports": null,
+  "resources": {
+    "vcpus": null,
+    "memory": null
+  }
+}
+=== end-snapshot ===
+
+=== ResourceLimits > combined resource config snapshot ===
+{
+  "name": "full-spec",
+  "serverUrl": null,
+  "mounts": null,
+  "ports": null,
+  "resources": {
+    "vcpus": 8,
+    "memory": 4096
+  }
+}
+=== end-snapshot ===
+
+=== ResourceLimits > high-vCPU config snapshot ===
+{
+  "name": "high-cpu",
+  "serverUrl": null,
+  "mounts": null,
+  "ports": null,
+  "resources": {
+    "vcpus": 16,
+    "memory": null
+  }
+}
+=== end-snapshot ===
+
+=== ResourceLimits > maximum memory config snapshot ===
+{
+  "name": "large",
+  "serverUrl": null,
+  "mounts": null,
+  "ports": null,
+  "resources": {
+    "vcpus": 8,
+    "memory": 32768
+  }
+}
+=== end-snapshot ===
+
+=== ResourceLimits > minimum memory config snapshot ===
+{
+  "name": "tiny",
+  "serverUrl": null,
+  "mounts": null,
+  "ports": null,
+  "resources": {
+    "vcpus": 1,
+    "memory": 64
+  }
+}
+=== end-snapshot ===
+
+=== ResourceLimits > single vCPU config snapshot ===
+{
+  "name": "single-cpu",
+  "serverUrl": null,
+  "mounts": null,
+  "ports": null,
+  "resources": {
+    "vcpus": 1,
+    "memory": null
+  }
+}
+=== end-snapshot ===

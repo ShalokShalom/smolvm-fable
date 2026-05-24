@@ -15,7 +15,6 @@ open SmolVm.Types
 
 [<Import("ExecutionError", "smolvm")>]
 type JsExecutionError =
-    inherit System.Exception
     abstract exitCode : int
     abstract stdout   : string
     abstract stderr   : string
@@ -29,9 +28,9 @@ let private newExecutionError (exitCode: int) (stdout: string) (stderr: string) 
 let (|ExecutionErr|_|) (e: exn) =
     let js = box e
     if js?name = "ExecutionError" then
-        Some {| exitCode = js?exitCode : int
-               stdout   = js?stdout   : string
-               stderr   = js?stderr   : string |}
+        Some {| exitCode = js?exitCode
+                stdout   = js?stdout
+                stderr   = js?stderr |}
     else None
 
 // ============================================================================
@@ -67,5 +66,5 @@ type ExecResult(response: ExecResponse) =
     /// Returns self for chaining.
     member this.AssertSuccess() : ExecResult =
         if not this.Success then
-            raise (newExecutionError this.ExitCode this.Stdout this.Stderr)
+            raise (!! (newExecutionError this.ExitCode this.Stdout this.Stderr))
         this

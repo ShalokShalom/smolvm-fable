@@ -1,0 +1,11 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "lsp": true,
+  "mcp": {
+    "fsi-server": {
+      "type": "remote",
+      "url": "http://localhost:5020/sse",
+      "enabled": true
+    }
+  }
+}

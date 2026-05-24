@@ -43,6 +43,18 @@ update-snapshots: restore
 update-snapshots-js: build-js
     UPDATE_SNAPSHOTS=1 node tests/SmolVm.Fable.Tests/.fable/Main.js
 
+# ─── FSI MCP Server ─────────────────────────────────────────────────────────
+
+# Clone and build the FSI MCP server (one-time setup)
+fsi-mcp-setup:
+    git clone https://github.com/jovaneyck/fsi-mcp-server.git tools/fsi-mcp-server
+    dotnet build tools/fsi-mcp-server
+
+# Start the FSI MCP server on http://localhost:5020/sse
+# Run this in a separate terminal before or during opencode sessions.
+fsi-mcp:
+    dotnet run --project tools/fsi-mcp-server/server
+
 # ─── Housekeeping ────────────────────────────────────────────────────────────
 
 # Remove all build artefacts

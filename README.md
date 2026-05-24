@@ -17,9 +17,24 @@ Node.js-oriented convenience preset for common JavaScript workloads.
 | Error hierarchy (`SmolvmError` … `ExecutionError`) | ✅ Stable |
 | NuGet package | 🚧 Not yet published |
 
-After applying, run a quick sanity review for:
-1. F# compile order in `SmolVm.Fable.fsproj`
-2. no remaining Python mentions in README
-3. `MachineUnknown` and `ContainerUnknown` wired correctly
-4. `Machine.fs` and `Container.fs` both use shared interop helpers
-5. no accidental changes to `src/Presets/Node.fs`
+## FSI MCP Server
+
+This project includes an optional [FSI MCP Server](https://github.com/jovaneyck/fsi-mcp-server) integration for AI-assisted F# development. It exposes F# Interactive as an MCP tool so that AI agents can evaluate code, load scripts, and inspect REPL output in the same session you're working in.
+
+### One-time setup
+
+```bash
+just fsi-mcp-setup
+```
+
+### Usage
+
+1. Start the FSI MCP server in a separate terminal:
+   ```bash
+   just fsi-mcp
+   ```
+   The server runs on `http://localhost:5020/sse`.
+
+2. Start opencode in your project. It will connect to the running server and expose the `SendFSharpCode`, `LoadFSharpScript`, `GetRecentFsiEvents`, and `GetFsiStatus` tools.
+
+You can use F# Interactive normally in your IDE while the AI agent shares the same REPL session.

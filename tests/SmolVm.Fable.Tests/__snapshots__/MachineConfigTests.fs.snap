@@ -1,0 +1,85 @@
+=== MachineConfig > config with custom serverUrl ===
+{
+  "name": "my-machine",
+  "serverUrl": "http://192.168.1.100:8080",
+  "mounts": null,
+  "ports": null,
+  "resources": null
+}
+=== end-snapshot ===
+
+=== MachineConfig > config with memory-only resources ===
+{
+  "name": "memory-only",
+  "serverUrl": null,
+  "mounts": null,
+  "ports": null,
+  "resources": {
+    "vcpus": null,
+    "memory": 256
+  }
+}
+=== end-snapshot ===
+
+=== MachineConfig > config with mounts ===
+{
+  "name": "my-machine",
+  "serverUrl": null,
+  "mounts": [
+    {
+      "hostPath": "/data",
+      "tag": "data",
+      "readOnly": true
+    }
+  ],
+  "ports": null,
+  "resources": null
+}
+=== end-snapshot ===
+
+=== MachineConfig > config with port mappings ===
+{
+  "name": "my-machine",
+  "serverUrl": null,
+  "mounts": null,
+  "ports": [
+    {
+      "host": 8080,
+      "guest": 80
+    }
+  ],
+  "resources": null
+}
+=== end-snapshot ===
+
+=== MachineConfig > config with resource limits ===
+{
+  "name": "constrained",
+  "serverUrl": null,
+  "mounts": null,
+  "ports": null,
+  "resources": {
+    "vcpus": 2,
+    "memory": 512
+  }
+}
+=== end-snapshot ===
+
+=== MachineConfig > minimal config snapshot ===
+{
+  "name": "my-machine",
+  "serverUrl": null,
+  "mounts": null,
+  "ports": null,
+  "resources": null
+}
+=== end-snapshot ===
+
+=== MachineConfig > round-trip sprintf representation snapshot ===
+{ name = "round-trip"
+  serverUrl = None
+  mounts = None
+  ports = None
+  resources = Some { vcpus = Some 1
+                     memory = Some 128 } }
+=== end-snapshot ===

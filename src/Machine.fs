@@ -30,7 +30,7 @@ type JsMachine =
     abstract info      : MachineInfo option
     abstract exec      : command: string array * ?options: obj -> Promise<obj>
     abstract run       : image: string * command: string array * ?options: obj -> Promise<obj>
-    abstract logs      : ?options: obj -> JS.AsyncIterableIterator<string>
+    abstract logs      : ?options: obj -> JS.AsyncIterable<string>
     abstract createContainer : options: obj -> Promise<obj>
     abstract listContainers  : unit         -> Promise<obj[]>
     abstract getContainer    : id: string   -> Promise<obj>
@@ -47,7 +47,10 @@ type Machine(js: JsMachine) =
     /// Create and start a machine. Mirrors Machine.create(config) in JS.
     /// MachineConfig is [<Pojo>] so Fable passes it as a plain JS object.
     static member Create(config: MachineConfig) : Promise<Machine> =
-        machineCreate config |> Promise.map Machine
+        async {
+            let! m = Async.AwaitPromise(machineCreate config)
+            return Machine(m)
+        } |> Async.StartAsPromise
 
     member internal _.Js = js
     member _.Name      : string             = js.name
@@ -69,45 +72,45 @@ type Machine(js: JsMachine) =
     member _.Status() : Promise<MachineInfo> = js.status()
 
     member _.Exec(command: string[], ?options: ExecOptions) : Promise<ExecResult> =
-        promise {
+        async {
             let! raw =
                 match options with
-                | None   -> js.exec(command)
-                | Some o -> js.exec(command, execOptsToJs o)
+                | None   -> js.exec(command) |> Async.AwaitPromise
+                | Some o -> js.exec(command, execOptsToJs o) |> Async.AwaitPromise
             return ExecResult(unbox<ExecResponse> raw)
-        }
+        } |> Async.StartAsPromise
 
     member _.Run(image: string, command: string[], ?options: ExecOptions) : Promise<ExecResult> =
-        promise {
+        async {
             let! raw =
                 match options with
-                | None   -> js.run(image, command)
-                | Some o -> js.run(image, command, execOptsToJs o)
+                | None   -> js.run(image, command) |> Async.AwaitPromise
+                | Some o -> js.run(image, command, execOptsToJs o) |> Async.AwaitPromise
             return ExecResult(unbox<ExecResponse> raw)
-        }
+        } |> Async.StartAsPromise
 
-    member _.Logs(?options: LogsOptions) : JS.AsyncIterableIterator<string> =
+    member _.Logs(?options: LogsOptions) : JS.AsyncIterable<string> =
         match options with
         | None   -> js.logs()
         | Some o -> js.logs(logsOptsToJs o)
 
     member _.CreateContainer(options: ContainerOptions) : Promise<Container> =
-        promise {
-            let! raw = js.createContainer(containerOptsToJs options)
+        async {
+            let! raw = js.createContainer(containerOptsToJs options) |> Async.AwaitPromise
             return Container(unbox<JsContainer> raw)
-        }
+        } |> Async.StartAsPromise
 
     member _.ListContainers() : Promise<Container[]> =
-        promise {
-            let! raws = js.listContainers()
-            return raws |> Array.map (fun r -> Container(unbox<JsContainer> r))
-        }
+        async {
+            let! raws = js.listContainers() |> Async.AwaitPromise
+            return raws |> Microsoft.FSharp.Collections.Array.map (fun r -> Container(unbox<JsContainer> r))
+        } |> Async.StartAsPromise
 
     member _.GetContainer(id: string) : Promise<Container> =
-        promise {
-            let! raw = js.getContainer(id)
+        async {
+            let! raw = js.getContainer(id) |> Async.AwaitPromise
             return Container(unbox<JsContainer> raw)
-        }
+        } |> Async.StartAsPromise
 
     member _.ListImages() : Promise<ImageInfo[]> = js.listImages()
 
@@ -123,24 +126,24 @@ type Machine(js: JsMachine) =
 /// Run `fn` against a freshly created machine, then stop + delete it.
 /// Cleanup runs even if `fn` raises; the original exception is re-raised.
 let withMachine (config: MachineConfig) (fn: Machine -> Promise<'T>) : Promise<'T> =
-    promise {
-        let! m = Machine.Create(config)
+    async {
+        let! m = Machine.Create(config) |> Async.AwaitPromise
         try
-            let! outcome = fn m
-            try do! m.Stop()   with _ -> ()
-            try do! m.Delete() with _ -> ()
+            let! outcome = fn m |> Async.AwaitPromise
+            try do! m.Stop()   |> Async.AwaitPromise with _ -> ()
+            try do! m.Delete() |> Async.AwaitPromise with _ -> ()
             return outcome
         with e ->
-            try do! m.Stop()   with _ -> ()
-            try do! m.Delete() with _ -> ()
+            try do! m.Stop()   |> Async.AwaitPromise with _ -> ()
+            try do! m.Delete() |> Async.AwaitPromise with _ -> ()
             return raise e
-    }
+    } |> Async.StartAsPromise
 
 let quickExec (command: string[]) (config: MachineConfig option) : Promise<ExecResult> =
     let cfg =
         config
         |> Option.defaultValue
-            { name      = sprintf "quick-exec-%d" (int (JS.Date.now()))
+            { name      = sprintf "quick-exec-%d" (int (Fable.Core.JS.Constructors.Date.now()))
               serverUrl = None
               mounts    = None
               ports     = None
@@ -151,7 +154,7 @@ let quickRun (image: string) (command: string[]) (config: MachineConfig option) 
     let cfg =
         config
         |> Option.defaultValue
-            { name      = sprintf "quick-run-%d" (int (JS.Date.now()))
+            { name      = sprintf "quick-run-%d" (int (Fable.Core.JS.Constructors.Date.now()))
               serverUrl = None
               mounts    = None
               ports     = None

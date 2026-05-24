@@ -1,0 +1,49 @@
+=== ExecResult > empty stdout result snapshot ===
+{
+  "ExitCode": 0,
+  "Stdout": "",
+  "Stderr": "",
+  "Success": true,
+  "Output": ""
+}
+=== end-snapshot ===
+
+=== ExecResult > multi-line stdout snapshot ===
+{
+  "ExitCode": 0,
+  "Stdout": "line1\nline2\nline3\n",
+  "Stderr": "",
+  "Success": true,
+  "Output": "line1\nline2\nline3\n"
+}
+=== end-snapshot ===
+
+=== ExecResult > non-zero exit code snapshot ===
+{
+  "ExitCode": 127,
+  "Stdout": "",
+  "Stderr": "",
+  "Success": false,
+  "Output": ""
+}
+=== end-snapshot ===
+
+=== ExecResult > stderr is captured ===
+{
+  "ExitCode": 1,
+  "Stdout": "",
+  "Stderr": "error: file not found\n",
+  "Success": false,
+  "Output": "error: file not found\n"
+}
+=== end-snapshot ===
+
+=== ExecResult > successful echo result snapshot ===
+{
+  "ExitCode": 0,
+  "Stdout": "Hello!\n",
+  "Stderr": "",
+  "Success": true,
+  "Output": "Hello!\n"
+}
+=== end-snapshot ===

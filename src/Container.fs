@@ -64,12 +64,12 @@ type Container(js: JsContainer) =
         | None   -> js.delete()
 
     member _.Exec(command: string[], ?options: ExecOptions) : Promise<ExecResult> =
-        promise {
+        async {
             let! raw =
                 match options with
-                | None   -> js.exec(command)
-                | Some o -> js.exec(command, execOptsToJs o)
+                | None   -> js.exec(command) |> Async.AwaitPromise
+                | Some o -> js.exec(command, execOptsToJs o) |> Async.AwaitPromise
             return ExecResult(unbox<ExecResponse> raw)
-        }
+        } |> Async.StartAsPromise
 
     member _.Refresh() : Promise<ContainerInfo> = js.refresh()

@@ -45,10 +45,10 @@ type NodeMachine private (inner: Machine) =
     /// Create and start a Node.js machine.
     /// Mirrors NodeMachine.create(config) in node.ts.
     static member Create(config: MachineConfig) : Promise<NodeMachine> =
-        promise {
-            let! m = Machine.Create(config)
+        async {
+            let! m = Machine.Create(config) |> Async.AwaitPromise
             return NodeMachine(m)
-        }
+        } |> Async.StartAsPromise
 
     // -----------------------------------------------------------------------
     // Delegated Machine members
@@ -90,25 +90,25 @@ type NodeMachine private (inner: Machine) =
     /// Run npm commands.
     /// Mirrors NodeMachine.npm(args, options?) in node.ts.
     member _.Npm(args: string[], ?options: ExecOptions) : Promise<ExecResult> =
-        inner.Run(DefaultImage, Array.append [| "npm" |] args, ?options = options)
+        inner.Run(DefaultImage, Microsoft.FSharp.Collections.Array.append [| "npm" |] args, ?options = options)
 
     /// Install npm packages.
     /// Mirrors NodeMachine.npmInstall(packages, options?) in node.ts.
     member this.NpmInstall(packages: string[], ?options: ExecOptions) : Promise<ExecResult> =
-        this.Npm(Array.append [| "install" |] packages, ?options = options)
+        this.Npm(Microsoft.FSharp.Collections.Array.append [| "install" |] packages, ?options = options)
 
     /// Run npx commands.
     /// Mirrors NodeMachine.npx(args, options?) in node.ts.
     member _.Npx(args: string[], ?options: ExecOptions) : Promise<ExecResult> =
-        inner.Run(DefaultImage, Array.append [| "npx" |] args, ?options = options)
+        inner.Run(DefaultImage, Microsoft.FSharp.Collections.Array.append [| "npx" |] args, ?options = options)
 
     /// Return the Node.js version string.
     /// Mirrors NodeMachine.version(options?) in node.ts.
     member this.Version(?options: CodeOptions) : Promise<string> =
-        promise {
-            let! r = this.RunCode("console.log(process.version)", ?options = options)
+        async {
+            let! r = this.RunCode("console.log(process.version)", ?options = options) |> Async.AwaitPromise
             return r.Stdout.Trim()
-        }
+        } |> Async.StartAsPromise
 
     /// Run ES module code (passes --input-type=module to node).
     /// Mirrors NodeMachine.runESM(code, options?) in node.ts.
