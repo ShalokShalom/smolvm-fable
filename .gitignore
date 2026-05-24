@@ -1,0 +1,19 @@
+# .NET / F#
+bin/
+obj/
+
+# Fable
+.fable/
+
+# Node
+node_modules/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

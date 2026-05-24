@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Fable SDK -->
     <PackageReference Include="Fable.Core" Version="4.*" />
   </ItemGroup>
 
@@ -15,6 +14,7 @@
     <Compile Include="src/Types.fs" />
     <Compile Include="src/Errors.fs" />
     <Compile Include="src/Execution.fs" />
+    <Compile Include="src/Internal/Interop.fs" />
     <Compile Include="src/Container.fs" />
     <Compile Include="src/Machine.fs" />
     <Compile Include="src/Presets/Node.fs" />
